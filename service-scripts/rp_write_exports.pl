@@ -285,7 +285,7 @@ for my $strip_ec (@strip_ec_flag)
 # We may swing everything to that at some point.
 #
 
-system("/vol/kbase/deployment/bin/rast-export-genome",
+system("rast-export-genome",
        "-i", $rasttk_file,
        "-o", "$export_dir/$genome.merged.gbk",
        "genbank_merged");

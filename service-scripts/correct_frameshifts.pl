@@ -151,21 +151,21 @@ if (open(NEAREST, "<$neighbors_file")) {
 }
 else {
     if ($nofatal) {
-	warn qq(Cannot open \'$org_dir/$neighbors_file\'\: $!);
+	warn qq(Cannot open \'$neighbors_file\'\: $!);
 	exit(0);
     }
     else {
-	die qq(Cannot open \'$org_dir/$neighbors_file\'\: $!);
+	die qq(Cannot open \'$neighbors_file\'\: $!);
     }
 }
 
 if (@neighbors == 0) {
     if ($nofatal) {
-	warn qq(Neighbors file \'$org_dir/$neighbors_file\' did not contain any valid neighbors);
+	warn qq(Neighbors file \'$neighbors_file\' did not contain any valid neighbors);
 	exit(0);
     }
     else {
-	die qq(Neighbors file \'$org_dir/$neighbors_file\' did not contain any valid neighbors);
+	die qq(Neighbors file \'$neighbors_file\' did not contain any valid neighbors);
     }
 }
 
