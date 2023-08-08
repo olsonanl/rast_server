@@ -254,72 +254,10 @@ sub check_job
 	return;
     }
 
+
     #
     # Now go through the stages of life for a genome dir.
     #
-
-    if ($meta->get_metadata("status.uploaded") ne "complete")
-    {
-	process_upload();
-	return;
-    }
-
-    #
-    # Determine if we have computed our target completion time. This will
-    # be used to submit deadline schedule requests.
-    #
-
-    if ($FIG_Config::use_deadline_scheduling)
-    {
-	#
-	# See if we are a high-priority user.
-	#
-
-	my $interval = $FIG_Config::deadline_interval;
-	if ($FIG_Config::high_priority_users{$job48->user})
-	{
-	    if ($FIG_Config::high_priority_deadline_interval > 0)
-	    {
-		$interval = $FIG_Config::high_priority_deadline_interval;
-	    }
-	}
-	
-	my $dl = $meta->get_metadata("sge_deadline");
-	my $upload = $meta->get_metadata("upload.timestamp");
-	if ($upload eq '')
-	{
-	    $upload = time;
-	    $meta->set_metadata("upload.timestamp", $upload);
-	}
-	
-	if ($dl eq '')
-	{
-	    #
-	    # Compute our deadline.
-	    #
-	    my $dltime = $upload + $interval;
-	    my $dlstr = strftime("%Y%m%d%H%M", localtime($dltime));
-	    $meta->set_metadata("sge_deadline", $dlstr);
-	}
-    }
-
-    #
-    # Determine the SGE priority for this job. In the absence of other factors,
-    # base it on the $FIG_Config::high_priority_users hash.
-    #
-    if ($FIG_Config::use_priority_scheduling)
-    {
-	#
-	# See if we are a high-priority user.
-	#
-
-	if ($FIG_Config::high_priority_users{$job48->user} &&
-	    defined(my $prio = $FIG_Config::high_priority_value))
-	{
-	    $meta->set_metadata("sge_priority", $prio);
-	}
-    }
-	
 
     #
     # pre-pipeline processing. We decide here whether this
@@ -328,378 +266,20 @@ sub check_job
     # or if it requires the classic pipeline to run.
     #
 
-    if ((my $status = $meta->get_metadata("status.pre_pipeline")) ne "complete")
-    {
-	if ($flush_pipeline && (! -f "$job_dir/RUN_DURING_FLUSH"))
-	{
-	    return;
-	}
 
-	if ($status ne "error")
-	{
-	    process_pre_pipeline($genome, $job_id, $job_dir, $meta, $job48);
-	}
-	else
-	{
-	    flag_error($genome, $job_id, $job_dir, $meta, "pre_pipeline");
-	}
+    #
+    # The Slurm pipeline only does the following:
+    #
+    # Ignore a job if we are flushing and it's not marked as running during flush
+    # Runs the job
+    #
+    
+    if ($flush_pipeline && (! -f "$job_dir/RUN_DURING_FLUSH"))
+    {
 	return;
     }
 
-    #
-    # If we are to be copying work directories to the Lustre parallel
-    # filesystem, do that here based on the status.lustre_spool_job flag.
-    #
-    
-    if ($FIG_Config::spool_onto_lustre)
-    {
-	if ($meta->get_metadata("status.lustre_spool_out") ne "complete")
-	{
-	    lustre_spool_out($genome, $job_id, $job_dir, $meta, $job48);
-	    #
-	    # whether it failed or not, mark complete. if it didn't fail
-	    # we just run from the non-lustre disk.
-	    #
-	    
-	    $meta->set_metadata("status.lustre_spool_out", "complete");
-	}
-    }
-    
-    #
-    # If rapid progation is not complete, schedule it, unless it
-    # had errored. In any event, if it's not complete, do not proceed.
-    #
-    if ($meta->get_metadata("status.rp") ne "complete")
-    {
-	#
-	# If we are flushing the pipeline, return here. This keeps new jobs from
-	# starting up rapid propagation.
-	#
-	if ($flush_pipeline && (! -f "$job_dir/RUN_DURING_FLUSH"))
-	{
-	    return;
-	}
-	
-	if ($meta->get_metadata("status.rp") ne "error")
-	{
-	    process_rp($genome, $job_id, $job_dir, $meta, $job48);
-	}
-	else
-	{
-	    flag_error($genome, $job_id, $job_dir, $meta, "rp");
-	}
-	
-	return;
-    }
-    
-    #
-    # We do not touch the QC or correction phases if keep_genecalls is enabled.
-    #
-    my $keep_genecalls = $meta->get_metadata("keep_genecalls");
-    
-    if ($meta->get_metadata("status.qc") ne "complete")
-    {
-	if ($keep_genecalls)
-	{
-	    $meta->add_log_entry($0, "keep_genecalls is enabled: marking qc as complete");
-	    $meta->set_metadata("status.qc", "complete");
-	}
-	elsif ($meta->get_metadata("status.qc") ne "error")
-	{
-	    process_qc($genome, $job_id, $job_dir, $meta, $job48);
-	}
-	else
-	{
-	    flag_error($genome, $job_id, $job_dir, $meta, "qc");
-	}
-	
-	return;
-    }
-    
-    #
-    # See if we need to perform correction.
-    #
-    
-    my $cor_status = $meta->get_metadata("status.correction");
-    
-    if ($cor_status ne 'complete')
-    {
-	if ($meta->get_metadata("correction.disabled"))
-	{
-	    $meta->add_log_entry($0, "correction.disabled is set: marking correction as complete");
-	    $meta->set_metadata("status.correction", "complete");
-	}
-	elsif ($keep_genecalls)
-	{
-	    $meta->add_log_entry($0, "keep_genecalls is enabled: marking correction as complete");
-	    $meta->set_metadata("status.correction", "complete");
-	}
-	elsif ($cor_status ne "error" and $cor_status ne 'requires_intervention')
-	{
-	    my $req = $meta->get_metadata("correction.request");
-	    process_correction($genome, $job_id, $job_dir, $meta, $job48, $req);
-	}
-	elsif ($cor_status eq 'error')
-	{
-	    flag_error($genome, $job_id, $job_dir, $meta, "correction");
-	}
-	return;
-    }
-    
-    my $sim_status = $meta->get_metadata("status.sims");
-    my $sim_preprocess_status = $meta->get_metadata("status.sims_preprocess");
-
-    #
-    # Check for sims here so we don't resubmit preprocess for everything.
-    #
-    if ($sim_status ne 'complete' && $sim_preprocess_status ne 'complete')
-    {
-	if ($sim_preprocess_status ne "error")
-	{
-	    preprocess_sims($genome, $job_id, $job_dir, $meta, $job48);
-	}
-	else
-	{
-	    flag_error($genome, $job_id, $job_dir, $meta, "sims_preprocess");
-	}
-	return;
-    }
-    
-    if ((my $sim_status = $meta->get_metadata("status.sims")) ne "complete")
-    {
-	if ($sim_status ne "error")
-	{
-	    process_sims($genome, $job_id, $job_dir, $meta, $job48);
-	}
-	else
-	{
-	    flag_error($genome, $job_id, $job_dir, $meta, "sims");
-	}
-	return;
-    }
-    
-    if ((my $sim_status = $meta->get_metadata("status.bbhs")) ne "complete")
-    {
-	if ($sim_status ne "error")
-	{
-	    process_bbhs($genome, $job_id, $job_dir, $meta, $job48);
-	}
-	else
-	{
-	    flag_error($genome, $job_id, $job_dir, $meta, "bbhs");
-	}
-	return;
-    }
-    
-    if ((my $aa_status = $meta->get_metadata("status.auto_assign")) ne "complete")
-    {
-	if ($aa_status ne "error")
-	{
-	    process_auto_assign($genome, $job_id, $job_dir, $meta, $job48);
-	}
-	else
-	{
-	    flag_error($genome, $job_id, $job_dir, $meta, "auto_assign");
-	}
-	return;
-    }
-    
-    if ((my $aa_status = $meta->get_metadata("status.glue_contigs")) ne "complete")
-    {
-	if ($aa_status ne "error")
-	{
-	    process_glue_contigs($genome, $job_id, $job_dir, $meta, $job48);
-	}
-	else
-	{
-	    flag_error($genome, $job_id, $job_dir, $meta, "glue_contigs");
-	}
-	return;
-    }
-    
-    if ((my $pch_status = $meta->get_metadata("status.pchs")) ne "complete")
-    {
-	if ($pch_status ne "error")
-	{
-	    process_pchs($genome, $job_id, $job_dir, $meta, $job48);
-	}
-	else
-	{
-	    flag_error($genome, $job_id, $job_dir, $meta, "pchs");
-	}
-	return;
-    }
-    
-    if ((my $scenario_status = $meta->get_metadata("status.scenario")) ne "complete")
-    {
-	if ($scenario_status ne "error")
-	{
-	    process_scenario($genome, $job_id, $job_dir, $meta, $job48);
-	}
-	else
-	{
-	    flag_error($genome, $job_id, $job_dir, $meta, "scenario");
-	}
-	return;
-    }
-    
-    if ((my $export_status = $meta->get_metadata("status.export")) ne "complete")
-    {
-	if ($export_status ne "error")
-	{
-	    process_export($genome, $job_id, $job_dir, $meta, $job48);
-	}
-	else
-	{
-	    flag_error($genome, $job_id, $job_dir, $meta, "export");
-	}
-	return;
-    }
-    
-    #
-    # Here marks the end of the stock processing stages. Anything beyond is triggered
-    # only if this genome is marked for inclusion into the SEED.
-    #
-    
-    if ($meta->get_metadata("status.final") ne "complete")
-    {
-	mark_job_user_complete($genome, $job_id, $job_dir, $meta, $job48);
-    }
-    
-    #
-    # If the job is marked as a JGI candidate, let it flow past. If not, we need
-    # to do more thorough checks on seed submission status.
-    #
-    
-    if (not $meta->get_metadata("submit.JGI"))
-    {
-	
-	#
-	# If this job is not even a candidate for seed inclusion, mark it as completely done.
-	#
-	
-	if (not ($meta->get_metadata("import.candidate")))
-	{
-	    print "Job not a candidate, marking as done\n";
-	    mark_job_done($genome, $job_id, $job_dir, $meta, $job48);
-	    return;
-	}
-	
-	#
-	# The job was a candidate. If it has been rejected (submit.never is set), mark it completely done.
-	#
-	
-	my $action = $meta->get_metadata("import.action");
-	
-	if ($action eq 'rejected')
-	{
-	    print "Job rejected, marking as done\n";
-	    mark_job_done($genome, $job_id, $job_dir, $meta, $job48);
-	    return;
-	}
-	
-	
-	#
-	# If the job has not yet been approved, just return and check again later.
-	#
-	
-	if ($action ne 'import')
-	{
-	    print "Job not yet checked, returning\n";
-	    return;
-	}
-	
-	#
-	# Otherwise, it's an approved candidate, and we can go ahead and process.
-	#
-	print "Continuing\n";
-    }
-    
-    #
-    # Perform Glimmer and Critica calls if marked for JGI-teach inclusion.
-    #
-    
-    if ($meta->get_metadata("submit.JGI"))
-    {
-	if ((my $glimmer_status = $meta->get_metadata("status.glimmer")) ne "complete")
-	{
-	    if ($glimmer_status ne "error")
-	    {
-		process_glimmer($genome, $job_id, $job_dir, $meta, $job48);
-	    }
-	    else
-	    {
-		flag_error($genome, $job_id, $job_dir, $meta, "glimmer");
-	    }
-	    return;
-	}
-	if ((my $critica_status = $meta->get_metadata("status.critica")) ne "complete")
-	{
-	    if ($critica_status ne "error")
-	    {
-		process_critica($genome, $job_id, $job_dir, $meta, $job48);
-	    }
-	    else
-	    {
-		flag_error($genome, $job_id, $job_dir, $meta, "critica");
-	    }
-	    return;
-	}
-    }
-    
-    if ((my $pfam_status = $meta->get_metadata("status.pfam")) ne "complete")
-    {
-	if ($pfam_status ne "error")
-	{
-	    process_pfam($genome, $job_id, $job_dir, $meta, $job48);
-	}
-	else
-	{
-	    flag_error($genome, $job_id, $job_dir, $meta, "pfam");
-	}
-	return;
-    }
-    
-    #     if ((my $cello_status = $meta->get_metadata("status.cello")) ne "complete")
-    #     {
-    # 	if ($cello_status ne "error")
-    # 	{
-    # 	    process_cello($genome, $job_id, $job_dir, $meta);
-    # 	}
-    # 	else
-    # 	{
-    # 	    flag_error($genome, $job_id, $job_dir, $meta, "cello");
-    # 	}
-    # 	return;
-    #     }
-    
-    #     if ((my $phobius_status = $meta->get_metadata("status.phobius")) ne "complete")
-    #     {
-    # 	if ($phobius_status ne "error")
-    # 	{
-    # 	    process_phobius($genome, $job_id, $job_dir, $meta);
-    # 	}
-    # 	else
-    # 	{
-    # 	    flag_error($genome, $job_id, $job_dir, $meta, "phobius");
-    # 	}
-    # 	return;
-    #     }
-    
-    
-    #
-    # This job is done.
-    #
-    
-    mark_job_done($genome, $job_id, $job_dir, $meta, $job48);
-}
-
-#
-# Very first stage.
-#
-sub process_upload
-{
-    return;
+    process_pre_pipeline($genome, $job_id, $job_dir, $meta, $job48);
 }
 
 #
@@ -820,12 +400,18 @@ sub process_pre_pipeline
 	}
     }
 
+    #
+    # We assume we always have auto corrections.
+    #
     my $auto_corrections = $meta->get_metadata("correction.automatic");
+    $auto_corrections = 1;
+    
     my $corrections_disabled = $meta->get_metadata("correction.disabled");
     my $no_cache = $meta->get_metadata("disable_cache");
 
     #
-    # We have our data, now make our decision.
+    # We have our data, now make our decision. Either run a replication job
+    # or an annotation job.
     #
 
     if ($old_job && (!$no_cache) && ($corrections_disabled || $auto_corrections || ($embedded == 0 && $overlaps == 0)))

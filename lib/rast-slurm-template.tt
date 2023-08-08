@@ -1,0 +1,140 @@
+#!/bin/sh
+#SBATCH --account [% sbatch_account %]
+#SBATCH --job-name [% sbatch_job_name %]
+#SBATCH --mem [% sbatch_job_mem %]
+#SBATCH --nodes 1-1 --ntasks [% n_cpus %]
+#SBATCH --export NONE
+#SBATCH -p rast
+
+#SBATCH --output [% sbatch_output %]
+#SBATCH --err [% sbatch_error %]
+#SBATCH --time [% sbatch_time %]
+
+[%# For now we are going to skip dynamic downloads %]
+
+[% IF 0 %]
+[% INSERT batch_utils.tt %]
+download_compute_image \
+	[% container_repo_url %] \
+	[% cluster_temp %] \
+	[% container_filename %] \
+	[% container_cache_dir %]
+
+[% END -%]
+
+export P3_ALLOCATED_MEMORY="${SLURM_MEM_PER_NODE}M"
+export P3_ALLOCATED_CPU=$SLURM_JOB_CPUS_PER_NODE
+export OVERRIDE_NSLOTS=$SLURM_JOB_CPUS_PER_NODE
+
+#
+# Emulate SGE variables for the SEED code that assumes SGE.
+#
+export SGE_TASK_ID=$SLURM_ARRAY_TASK_ID
+export SGE_TASK_FIRST=$SLURM_ARRAY_TASK_MIN
+export SGE_TASK_LAST=$SLURM_ARRAY_TASK_MAX
+
+[% IF environment_config -%]
+[% FOR ent IN environment_config -%]
+[% ent %]
+[% END -%]
+[% END -%]
+
+top=`pwd`
+
+[% FOR job IN jobs -%]
+
+export WORKDIR=[% cluster_temp %]/rast-[% job.id %]-$SLURM_JOB_ID
+mkdir $WORKDIR
+cd $WORKDIR
+
+cat > run_annotation.[% job.id %] <<"EOF"
+#!/bin/sh -x
+export PERL5LIB=/vol/kbase/deployment/lib
+source /opt/rast/FIGdisk/config/fig-user-env.sh
+
+[% IF application == "annotate" -%]
+
+batch_rast [% FOR phase IN phases %] --phase [% phase %] [% END %] [% job.directory %]
+
+[% ELSIF application == "replicate" -%]
+
+replicate_job [% job.old_directory %] [% job.directory %]
+
+[% END -%]
+
+EOF
+chmod +x run_annotation.[% job.id %]
+
+[% IF container_image -%]
+
+if [[ ! -s [% container_image %] ]] ; then
+   echo "Container image file [% container_image %] is missing" 1>&2
+   exit 1
+fi
+
+echo "Running job [% job.id %] in container [% container_image %]"
+
+cd /
+export TMPDIR=/tmp
+export TEMPDIR=/tmp
+
+function join_by { local d=$1; shift; local f=$1; shift; printf %s "$f" "${@/#/$d}"; }
+
+binds=()
+binds+=($WORKDIR:/tmp)
+binds+=($WORKDIR:/disks/tmp)
+binds+=($WORKDIR:/opt/rast/FIGdisk/FIG/Tmp)
+binds+=(/vol/rast-prod/global)
+binds+=(/vol/rast-prod/jobs/[% job.id %])
+binds+=(/vol/rast-prod/FIGdisk/FIG/Data:/opt/rast/FIGdisk/FIG/Data)
+binds+=(/vol/kbase/deployment)
+binds+=(/vol/rast-prod/NR-SEED)
+binds+=(/vol/kbase/runtime)
+[% IF job.old_directory -%]
+binds+=([% job.old_directory %])
+[% END -%]
+
+binds=$(join_by , ${binds[@]})
+
+singularity run \
+	    -H $WORKDIR \
+	    -B $binds \
+	    --pwd /tmp \
+	    [% container_image %] \
+	    ./run_annotation.[% job.id %] &
+
+pid_[% job.id %]=$!
+echo "job [% job.id %] has pid $pid_[% job.id %]"
+
+[% ELSE -%]
+
+echo "Container required for RAST" 1>&2
+exit 1
+
+[% END -%]
+
+[% END -%]
+
+cd $top
+
+[% FOR job IN jobs -%]
+
+pid=$pid_[% job.id %]
+echo "Wait for task [% job.id %] $pid"
+wait $pid
+rc_[% job.id %]=$?
+echo "Job [% job.id %] exited with $rc_[% job.id %]"
+
+
+if [ $rc_[% job.id %] = 0 ] ; then
+   rm -rf [% cluster_temp %]/rast-[% job.id %]-$SLURM_JOB_ID
+fi
+
+[% END -%]
+
+[% IF jobs.size == 1 -%]
+exit $rc_[% jobs.0.id %]
+[% ELSE -%]
+exit 0
+[% END -%]
+
