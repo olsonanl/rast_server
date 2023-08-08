@@ -22,10 +22,10 @@ use Tracer;
 use Job48;
 use Mail::Mailer;
 
-print "Jobs: ",$FIG_Config::fortyeight_jobs , "\n";
+print "Jobs: ",$FIG_Config::rast_jobs , "\n";
 
 my @jobs = Job48::all_jobs();
-print "Jobs: ",$FIG_Config::fortyeight_jobs , "\n";
+print "Jobs: ",$FIG_Config::rast_jobs , "\n";
 my $exclude = { batch => 1 ,
 		olson => 1 ,
 		mkubal => 1 ,

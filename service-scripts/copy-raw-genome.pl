@@ -12,7 +12,7 @@ use GenomeMeta;
 
 @ARGV > 0 or die "usage: $0 genome [...]\n";
 
-my $job_spool_dir = $FIG_Config::fortyeight_jobs;
+my $job_spool_dir = $FIG_Config::rast_jobs;
 
 opendir(D, $job_spool_dir) or  die "Cannot open job directory $job_spool_dir: $!\n";
 

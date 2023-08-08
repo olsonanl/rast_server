@@ -38,7 +38,7 @@ sub all_jobs
 {
     my @jobs;
 
-    my $dh = new DirHandle($FIG_Config::fortyeight_jobs);
+    my $dh = new DirHandle($FIG_Config::rast_jobs);
 
     while (defined($_ = $dh->read()))
     {
@@ -349,7 +349,7 @@ sub new
     my $dir;
     if ($job_id =~ /^\d+$/)
     {
-	$dir = "$FIG_Config::fortyeight_jobs/$job_id";
+	$dir = "$FIG_Config::rast_jobs/$job_id";
     }
     else
     {

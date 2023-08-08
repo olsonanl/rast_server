@@ -37,7 +37,7 @@ use IPC::Run;
 TSetup("2 main FIG", "TEXT");
 
 my $job_spool_dir = $FIG_Config::rast_active_jobs;
-$job_spool_dir = $FIG_Config::fortyeight_jobs if $job_spool_dir eq '';
+$job_spool_dir = $FIG_Config::rast_jobs if $job_spool_dir eq '';
 
 my $usage = "check_jobs [-flush-pipeline]";
 

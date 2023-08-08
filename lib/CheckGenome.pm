@@ -49,7 +49,7 @@ sub new {
   my $dir;
   if ($job_id =~ /^\d+$/)
     {
-      $dir = "$FIG_Config::fortyeight_jobs/$job_id";
+      $dir = "$FIG_Config::rast_jobs/$job_id";
     }
   else
     {

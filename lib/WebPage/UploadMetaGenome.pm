@@ -143,7 +143,7 @@ sub perform_upload {
     my ($fn, $dir, $ext) = fileparse($upload_file, qr/\.[^.]*/);
 
     my $file = File::Temp->new( TEMPLATE => $session->user->login.'_XXXXXXX',
-				DIR => $FIG_Config::fortyeight_jobs . '/incoming/',
+				DIR => $FIG_Config::rast_jobs . '/incoming/',
 				SUFFIX => $ext,
 				UNLINK => 0,
 			      );

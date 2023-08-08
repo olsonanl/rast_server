@@ -38,7 +38,7 @@ sub output {
   my $app = $self->application();
   my $cgi = new CGI;
   my $job = $cgi->param('job');
-  my $basedir = $FIG_Config::fortyeight_jobs . "/" . $job;
+  my $basedir = $FIG_Config::rast_jobs . "/" . $job;
   my $genome_id = `cat $basedir/GENOME_ID`;
   my $genome_name = `cat $basedir/GENOME`;
   chomp $genome_id;
