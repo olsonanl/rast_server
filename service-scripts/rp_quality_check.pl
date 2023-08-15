@@ -37,7 +37,7 @@ $genome =~ /^\d+\.\d+/ or die "$0: Cannnot find genome ID for jobdir $jobdir\n";
 
 my $jobid = basename($jobdir);
 
-my $job = new Job48($jobid);
+my $job = new Job48($jobdir);
 
 my $meta_file = "$jobdir/meta.xml";
 my $meta = new GenomeMeta($genome, $meta_file);

@@ -1,5 +1,7 @@
 
 use strict;
+use Data::Dumper;
+
 use Carp;
 use Job48;
 use FIG_Config;
@@ -34,10 +36,12 @@ use JobError qw(flag_error);
 
 my $parallel = 1;
 my @phase;
+my $skip_sims;
 
 my $usage = "Usage: $0 [--parallel N] -phase N [--phase N ..] jobdir\n";
 
 if (!GetOptions("parallel=i" => \$parallel,
+		"skip-sims" => \$skip_sims,
 		"phase=s" => \@phase))
 {
     die $usage;
@@ -81,6 +85,11 @@ my $sims_keep_count = 300;
 
 my $job48 = new Job48($job_dir);
 my $meta = $job48->meta;
+
+if ($skip_sims)
+{
+    $meta->set_metadata("skip_sims", 1);
+}
 
 my $host = `hostname`;
 chomp $host;

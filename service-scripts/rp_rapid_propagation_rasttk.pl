@@ -29,6 +29,21 @@ use Bio::KBase::GenomeAnnotation::Client;
 use JSON::XS;
 use Data::Dumper;
 
+#
+# Try to load up the RASTtk modules to see if we can run locally.
+#
+
+our $local_rasttk;
+BEGIN {
+    require Bio::KBase::GenomeAnnotation::Service;
+    require P3AuthToken;
+
+    require Bio::P3::GenomeAnnotationApp::GenomeAnnotationCore;
+    require Bio::KBase::GenomeAnnotation::GenomeAnnotationImpl;
+    require Bio::KBase::GenomeAnnotation::Service;
+    $local_rasttk = 1;
+};
+
 @ARGV == 1 or die "Usage: $0 job-dir\n";
 
 my $jobdir = shift;
@@ -60,8 +75,32 @@ if (! -d $raw_dir)
     &fatal("raw genome directory $raw_dir does not exist");
 }
 
-make_path($rp_dir);
+my $core;
+my $pipeline;
+if ($local_rasttk)
+{
+    #
+    # Set up environment for invoking local RASTtk.
+    #
+    my $app_def = {
+	script => "rp_rapid_propagation_rasttk",
+    };
 
+    my $app;
+    my $params = {};
+    $core = Bio::P3::GenomeAnnotationApp::GenomeAnnotationCore->new(app => $app,
+									app_def => $app_def,
+								    params => $params);
+    $pipeline = $core->impl;
+
+    $Bio::KBase::GenomeAnnotation::Service::CallContext = $core->ctx;
+}
+else
+{
+    $pipeline = Bio::KBase::GenomeAnnotation::Client->new($FIG_Config::genome_annotation_service);
+}
+
+make_path($rp_dir);
 
 $meta->set_metadata("rp.hostname", $hostname);
 
@@ -112,7 +151,6 @@ open(F, ">", "$raw_dir/raw_genome.gto") or fatal("Cannot write $raw_dir/raw_geno
 print F $json->encode($obj);
 close(F);
 
-my $client = Bio::KBase::GenomeAnnotation::Client->new($FIG_Config::genome_annotation_service);
 
 #
 # FOR TESTING: if proc genome exists, don't rerun.
@@ -133,11 +171,11 @@ else
     my $workflow = $meta->get_metadata('rasttk_workflow');
     if (!$workflow)
     {
-	$workflow = $client->default_workflow();
+	$workflow = $pipeline->default_workflow();
 	$meta->set_metadata('rasttk_workflow', $workflow);
     }
 
-    $proc = $client->run_pipeline($obj, $workflow);
+    $proc = $pipeline->run_pipeline($obj, $workflow);
     
     open(F, ">", "$raw_dir/proc_genome.gto") or fatal("Cannot write $raw_dir/proc_genome.gto: $!");
     print F $json->encode($proc);

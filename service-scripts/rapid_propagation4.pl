@@ -189,8 +189,8 @@ if ($meta_file) {
 	$meta->set_metadata("correction.backfill_gaps", 1);
     }
     
-    $ENV{DEBUG}   = $meta->get_metadata('env.debug')   || 0;
-    $ENV{VERBOSE} = $meta->get_metadata('env.verbose') || 0;
+    $ENV{DEBUG}   //= $meta->get_metadata('env.debug')   || 0;
+    $ENV{VERBOSE} //= $meta->get_metadata('env.verbose') || 0;
 }
 else {
     die "$self now requires a meta file";

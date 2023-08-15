@@ -13,9 +13,10 @@ use Getopt::Long::Descriptive;
 use strict;
 use Template;
 use File::Slurp;
+use File::Basename;
 use IPC::Run qw(run);
 
-my($opt, $usage) = describe_options("%c %o jobid [jobid...]",
+my($opt, $usage) = describe_options("%c %o jobdir [jobdir...]",
 				    ['container=s' => "Container to use for job execution"],
 				    ['template=s' => "Job submission template"],
 				    ['replicate=s' => "Run a replication job. Parameter is the job to replicate from"],
@@ -24,6 +25,7 @@ my($opt, $usage) = describe_options("%c %o jobid [jobid...]",
 				    ['tasks=i' => "Run task array job with this many tasks"],
 				    ['cpus=i' => "Number of cpus", { default => 1 }],
 				    ['dry-run' => "Do a dry run (don't submit)"],
+				    ['partition=s' => "Use this partition", { default => 'rast' }],
 				    ["output-directory|o=s" => "Slurm output directory", { default => "/vol/rast-prod/slurm-output" }],
 				    ["help|h" => "Show this help message"]);
 print($usage->text), exit if $opt->help;
@@ -31,7 +33,7 @@ die($usage->text) if @ARGV < 1;
 
 my $app;
 
-my @job_ids = @ARGV;
+my @job_dirs = @ARGV;
 
 if ($opt->phase)
 {
@@ -47,7 +49,7 @@ else
     {
 	die "Job phase or replication required\n";
     }
-    if (@job_ids > 1)
+    if (@job_dirs > 1)
     {
 	die "Only one job id may be specified for replication";
     }
@@ -61,8 +63,10 @@ else
 
 my $container = $opt->container;
 
-$container or die "Container parameter is required\n";
--f $container or die "Container $container is not present\n";
+if ($container)
+{
+    -f $container or die "Container $container is not present\n";
+}
 
 my $template = $opt->template;
 $template or die "Template parameter is required\n";
@@ -79,14 +83,15 @@ my %vars = (container_repo_url => 'https://p3.theseed.org/containers',
 	    n_cpus => $opt->cpus,
 	    phases => $opt->phase,
 	    application => $app,
+	    partition => $opt->partition,
+	    rast_installation => $ENV{KB_TOP},
 	   );
 
 my $account;
 
-for my $id (@job_ids)
+my @job_ids;
+for my $dir (@job_dirs)
 {
-    my $dir ="/vol/rast-prod/jobs/$id";
-
     my $user = read_file("$dir/USER");
     chomp $user;
     $user .= '@rast.nmpdr.org';
@@ -96,11 +101,13 @@ for my $id (@job_ids)
 	die "All jobs submitted must have the same owner\n";
     }
     $account = $user;
-    
+
+    my $job_id = basename($dir);
+    push(@job_ids, $job_id);
     -d $dir or die "Job directory $dir does not exist\n";
-    my $job = { id => $id,
-		    directory => $dir,
-		};
+    my $job = { id => $job_id,
+		directory => $dir,
+	       };
 
     if ($opt->replicate)
     {

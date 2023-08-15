@@ -20,6 +20,7 @@ use strict;
 use warnings;
 use SeedEnv;
 use gjoseqlib;
+use Data::Dumper;
 
 use FIG;
 my $fig = new FIG;
