@@ -38,7 +38,7 @@ sub all_jobs
 {
     my @jobs;
 
-    my $dh = new DirHandle($FIG_Config::fortyeight_jobs);
+    my $dh = new DirHandle($FIG_Config::rast_jobs);
 
     while (defined($_ = $dh->read()))
     {
