@@ -779,6 +779,7 @@ sub get_jobs_for_user_fast {
     }
 
     my $first_job = $user_or_scope->wants_rast_jobs_starting_with() || 1;
+    print STDERR Dumper($first_job, $want_all_jobs);
     if ($first_job =~ /(\d+)/)
     {
 	$job_cond .= " AND j.id >= $1";

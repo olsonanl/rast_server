@@ -41,7 +41,7 @@ $job_spool_dir = $FIG_Config::rast_jobs if $job_spool_dir eq '';
 
 my $usage = "check_jobs [-flush-pipeline]";
 
-my $cache = Cache::Memcached::Fast->new({ servers => ['localhost:11212'], namespace => 'rastprod'});
+my $cache = Cache::Memcached::Fast->new({ servers => ['localhost:11211'], namespace => 'rastprod'});
 
 my $flush_pipeline;
 while (@ARGV > 0 and $ARGV[0] =~ /^-/)
@@ -71,7 +71,8 @@ if ($df->{bavail} < 10)
     die sprintf "Not enough free space available (%.1f GB) in $job_spool_dir", $df->{bavail};
 }
 
-my $job_floor = 50_000;
+my $job_floor = 0;
+
 if ($FIG_Config::rast_job_floor =~ /^\d+$/)
 {
     $job_floor  = $FIG_Config::rast_job_floor;
@@ -149,7 +150,7 @@ else
 my $rast_container = $FIG_Config::rast_container;
 if (!$rast_container || ! -f $rast_container)
 {
-    warn "No rast container found\n";
+#    warn "No rast container found\n";
 }
 
 for my $job (@jobs)
@@ -380,7 +381,6 @@ sub process_pre_pipeline
 	}
     }
 
-    die Dumper($sig, $old_job);
     #
     # We assume we always have auto corrections.
     #
@@ -395,6 +395,12 @@ sub process_pre_pipeline
     # or an annotation job.
     #
 
+    my @container;
+    if ($rast_container)
+    {
+	@container = ("--container", $rast_container);
+    }
+
     if ($old_job && (!$no_cache) && ($corrections_disabled || $auto_corrections || ($embedded == 0 && $overlaps == 0)))
     {
 	my $old_dir = $old_job->dir;
@@ -402,7 +408,7 @@ sub process_pre_pipeline
 
 	my $output;
 	$meta->add_log_entry($0, "submitting slurm replication request for $old_dir $job_dir");
-	my $ok = IPC::Run::run(["rast-submit-rast-job", "--replicate", $old_dir, $rast_container, $job_id],
+	my $ok = IPC::Run::run(["rast-submit-rast-job", "--replicate", $old_dir, @container, $job_dir],
 			       ">", \$output);
 	$meta->add_log_entry($0, ["rast-submit-rast-job", $output]);
     }
@@ -412,7 +418,7 @@ sub process_pre_pipeline
 	
 	my $output;
 	$meta->add_log_entry($0, "submitting slurm annotation request for $job_id");
-	my $ok = IPC::Run::run(["rast-submit-rast-job", $rast_container, $job_id],
+	my $ok = IPC::Run::run(["rast-submit-rast-job", @container, $job_dir],
 			       ">", \$output);
 	$meta->add_log_entry($0, ["rast-submit-rast-job", $output]);
     }

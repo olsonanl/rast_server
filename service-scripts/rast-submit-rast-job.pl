@@ -17,7 +17,7 @@ my($opt, $usage) = describe_options("%c %o jobdir",
 				    ['skip-sims' => "Skip similarity computation"],
 				    ['sims-cpus=i' => "Number of cpus for sims computation", { default => 4 }],
 				    ['dry-run' => "Do a dry run"],
-				    ['partition=s' => "Use this partition", { default => 'rast' }],
+				    ['partition=s' => "Use this partition", { default => 'shared' }],
 				    ["output-directory|o=s" => "Slurm output directory"],
 				    ["help|h" => "Show this help message"]);
 print($usage->text), exit if $opt->help;
