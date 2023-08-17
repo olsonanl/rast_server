@@ -18,8 +18,6 @@ use Bio::SeqFeature::Generic;
 use Bio::SeqFeature::Annotated;
 use Bio::Species;
 use File::Basename;
-use IPC::Run;
-use IO::Handle;
 
 sub export {
     my ($parameters) = @_;
@@ -376,10 +374,7 @@ sub export {
 	#
 	# bioperl writes lowercase dna. We want uppercase for biophython happiness.
 	#
-	my $fh = IO::Handle->new;
-	my $h = IPC::Run::start(['sed',  '/^LOCUS/s/dna/DNA/'], "<pipe", $fh, ">", $filename);
-	my $sio = Bio::SeqIO->new(-fh => $fh, -format => $format);
-	#my $sio = Bio::SeqIO->new(-file => "| sed '/^LOCUS/s/dna/DNA/' >$filename", -format => $format);
+	my $sio = Bio::SeqIO->new(-file => "| sed '/^LOCUS/s/dna/DNA/' >$filename", -format => $format);
 	foreach my $seq (keys %$bio) {
 	    $sio->write_seq($bio->{$seq});
 	}

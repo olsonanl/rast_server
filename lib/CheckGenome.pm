@@ -49,7 +49,7 @@ sub new {
   my $dir;
   if ($job_id =~ /^\d+$/)
     {
-      $dir = "$FIG_Config::rast_jobs/$job_id";
+      $dir = "$FIG_Config::fortyeight_jobs/$job_id";
     }
   else
     {
@@ -725,7 +725,7 @@ sub make_decision {
   $msg .= "NCBI has ".$data->{ ncbi_nr_seq}." sequences and " . $data->{ ncbi_nr_projects} . " projects for ".$data->{ ncbi_genome}." in the Taxonomy Browser!<hr>";
   
   if ( $data->{ ncbi_genome } ne $data->{ name } ){
-    $msg .= "Different genome name at the NCBI for this taxonmy id: <b> ".$data->{ ncbi_genome }."</b>\n"; 
+    $msg .= "Different genome name at the NCBI for this taxonomy id: <b> ".$data->{ ncbi_genome }."</b>\n"; 
     
     my $user = get_user_from_job( $data );
     if ( $user eq "batch"){

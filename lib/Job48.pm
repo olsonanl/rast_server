@@ -38,7 +38,7 @@ sub all_jobs
 {
     my @jobs;
 
-    my $dh = new DirHandle($FIG_Config::rast_jobs);
+    my $dh = new DirHandle($FIG_Config::fortyeight_jobs);
 
     while (defined($_ = $dh->read()))
     {
@@ -187,6 +187,12 @@ sub create_new_job {
     open(FH, ">" . $job_dir . "/TAXONOMY") or die "could not open TAXONOMY file in $job_dir: $!\n";
     print FH $data->{'taxonomy'}."\n";
     close FH;
+
+    if ($data->{taxonomy_id}) {
+	open(FH, ">" . $job_dir . "/TAXONOMY_ID") or die "could not open TAXONOMY_ID file in $job_dir: $!\n";
+	print FH $data->{'taxonomy_id'}."\n";
+	close FH;
+    }
     
     if ($data->{'tax_dir'}) {
 	system("cp $job_dir/GENOME $job_dir/PROJECT $job_dir/TAXONOMY ".$data->{'tax_dir'});
@@ -258,13 +264,39 @@ sub create_new_job {
 	$rc == 0 || die "Copy of upload data failed with rc=$rc: $cmd";
 
 	#
+	# For the purposes of the renumber we need to check the
+	# tax ID used in the creation of the seed directory. If we are running
+	# from a genbank file that did not specify a tax ID, we'll have the
+	# 88888888 tax ID left over from the original parse.
+	#
+
+	my $this_tax = $data->{taxonomy_id};
+	my $fdir = "$data->{upload_dir}/orgdir/Features";
+	for my $tmp_tbl (<$fdir/*/tbl>)
+	{
+	    if (open(my $tmp, "<", $tmp_tbl))
+	    {
+		my $l = <$tmp>;
+		if ($l =~ /^fig\|([\d.]+)\.[a-z]+/)
+		{
+		    $this_tax = $1;
+		    last;
+		}
+		close($tmp);
+	    }
+	}
+
+	#
 	# Use renumber_seed_dir to copy and renumber the extracted
 	# orgdir into the raw directory.
 	#
-	$cmd = "$FIG_Config::bin/renumber_seed_dir --old-id $data->{taxonomy_id} --exists-ok $data->{upload_dir}/orgdir $data->{taxonomy_id_ext} $data->{tax_dir}";
-	print STDERR "$cmd\n";
-	$rc = system($cmd);
-	$rc == 0 || die "renumber failed with rc=$rc: $cmd";
+	my @cmd = ("$FIG_Config::bin/renumber_seed_dir",
+		   "--old-id", $this_tax,
+		   "--exists-ok",
+		   "$data->{upload_dir}/orgdir", $data->{taxonomy_id_ext}, $data->{tax_dir});
+	print STDERR "@cmd\n";
+	$rc = system(@cmd);
+	$rc == 0 || die "renumber failed with rc=$rc: @cmd";
 	#...Fix genome metadata files mangled by `parse_genbank`...
 	system("cp -pf  $job_dir/GENOME  $job_dir/PROJECT  $job_dir/TAXONOMY  $data->{tax_dir}/");
 	$meta->add_log_entry("genome", "Copied genome data from $data->{upload_dir}");
@@ -286,7 +318,6 @@ sub create_new_job {
 	    }
 	    close FH;
 	}
-	
 	elsif ($firstline =~ /^LOCUS/) {
 	    # this is a Genbank file, call parse_genbank
 	    open(FH, ">" . $data->{'tax_dir'} . "/genbank_file") 
@@ -304,13 +335,27 @@ sub create_new_job {
 	    #...Fix genome metadata files mangled by `parse_genbank`...
 	    system("cp -pf  $job_dir/GENOME  $job_dir/PROJECT  $job_dir/TAXONOMY  $data->{tax_dir}/");
 	}
-	
 	else {
 	    # the file is in incorrect format, throw an error
 	    $meta->add_log_entry("genome", "Upload failed, invalid format.");
 	    return (undef, "The uploaded file has an incorrect format. Visit <a href='http://www.theseed.org/wiki/RAST_upload_formats'>our wiki<a> for more inforamtion about valid formats.");
 	    
 	}
+	#
+	# Reformat contigs.
+	#
+	my $errdir = "$job_dir/rp.errors";
+	&FIG::verify_dir($errdir);
+	
+	my @cmd = ("$FIG_Config::bin/reformat_contigs", "-v", "--logfile=$errdir/reformat.log",
+		   "$data->{tax_dir}/unformatted_contigs",
+		   "$data->{tax_dir}/contigs");
+	my $rc = system(@cmd);
+	if ($rc != 0)
+	{
+	    die "Error $rc reformatting contigs with @cmd\n";
+	}
+	
 	$meta->add_log_entry("genome", "Successfully uploaded sequence file.");
     }
     
@@ -349,7 +394,7 @@ sub new
     my $dir;
     if ($job_id =~ /^\d+$/)
     {
-	$dir = "$FIG_Config::rast_jobs/$job_id";
+	$dir = "$FIG_Config::fortyeight_jobs/$job_id";
     }
     else
     {
@@ -497,7 +542,6 @@ sub getUserObject {
 			    -backend  => $FIG_Config::webapplication_backend,
 			    -host     => $FIG_Config::webapplication_host,
 			    -user     => $FIG_Config::webapplication_user,
-			    -password  => $FIG_Config::webapplication_password,
 			    );
 
     my $username   = $self->user();
@@ -585,12 +629,12 @@ sub send_email_to_owner
 		$name = join(" " , $userobj->firstname(), $userobj->lastname());
 	    }
 		
-            #
-            # Names with HTML escapes do not work properly. Drop
-            # them as they are just for decoration.
-            #
-            $name = '' if $name =~ /&#\d+;/;
-	    
+	    #
+	    # Names with HTML escapes do not work properly. Drop
+	    # them as they are just for decoration.
+	    #
+	    $name = '' if ($name =~ /&#\d+;/);
+
 	    my $full = $name ? "$name <$email>" : $email;
 	    warn "send notification email to $full\n";
 

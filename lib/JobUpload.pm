@@ -21,6 +21,7 @@ package JobUpload;
 use base 'Class::Accessor';
 use strict;
 
+use Encode;
 use GenomeMeta;
 use Data::Dumper;
 use FIG_Config;
@@ -65,7 +66,14 @@ sub create_from_filehandle
     # the original data in a file in our work directory.
     #
     
-    $self->meta->set_metadata("upload_filename", $filename);
+    # $self->meta->set_metadata("upload_filename", $filename);
+    open(my $wfh, ">", $self->workdir . "/upload_filename");
+    print $wfh $filename;
+    close($wfh);
+    
+    open(my $wfh, ">", $self->workdir . "/upload_filename.utf8");
+    print $wfh encode_utf8($filename);
+    close($wfh);
     
     my $block;
     
@@ -671,6 +679,19 @@ sub setup_genbank_org_dir
     #
 
     rename("$orgdir/contigs", "$orgdir/unformatted_contigs");
+
+    #                                                                                                                        
+    # Create a TAXONOMY_ID file                                                                                              
+    #                                                                                                                        
+    if (! -f "$orgdir/TAXONOMY_ID")
+    {
+        if (open(my $tfh, ">", "$orgdir/TAXONOMY_ID"))
+        {
+            print $tfh "$tax_id\n";
+            close($tfh);
+        }
+    }
+
 }
 
 sub reformat_contigs
@@ -752,8 +773,42 @@ sub compute_contig_stats
     }
     close($fh);
     
+    #
+    # Also compute N50.
+    #
+    if (open(my $fh, "<", "$orgdir/$which"))
+    {
+	my $length;
+	my $totalLength; 
+	my @arr;
+	while(<$fh>){
+	    chomp; 
+	    if(/>/){
+		push (@arr, $length);
+		$totalLength += $length; 
+		$length=0;
+		next;
+	    }
+	    $length += length($_);
+	}
+	
+	my @sort = sort {$b <=> $a} @arr;
+	my $n50; 
+	my $L50;
+	foreach my $val(@sort){
+	    $n50 += $val;
+	    $L50++;
+	    if($n50 >= $totalLength/2){
+		$stats{N50} = $val;
+		$stats{L50} = $L50;
+		last; 
+	    }
+	}
+	close($fh);
+    }
     $self->meta->set_metadata("bp_in_seqs_over_2k_$which", $count_over_2k);
     $self->meta->set_metadata("stats_$which", \%stats);
+
 }
 
 #
@@ -833,6 +888,8 @@ sub html_report
 			max => 'Longest contig size',
 			contigs => 'contigs as uploaded',
 			split_contigs => 'contigs after split into scaffolds',
+			N50 => 'N50 value',
+			L50 => 'L50 value',
 			);
 
     if (0)
@@ -858,7 +915,7 @@ sub html_report
     $c .= "<h3>Contig statistics</h3>\n";
     $c .= "<table>\n";
     $c .= "<tr><th>Statistic</th><th>As uploaded</th><th>After splitting into scaffolds</th></tr>\n";
-    for my $k (qw(chars seqs gc min median mean max))
+    for my $k (qw(chars seqs gc min median mean max N50 L50))
     {
 	$c .= "<tr><td>$stat_strings{$k}</td><td>$stats_uploaded->{$k}</td><td>$stats_split->{$k}</td></tr>\n";
     }
