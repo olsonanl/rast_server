@@ -542,6 +542,7 @@ sub getUserObject {
 			    -backend  => $FIG_Config::webapplication_backend,
 			    -host     => $FIG_Config::webapplication_host,
 			    -user     => $FIG_Config::webapplication_user,
+			    -password => $FIG_Config::webapplication_password,
 			    );
 
     my $username   = $self->user();

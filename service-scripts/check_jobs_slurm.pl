@@ -422,6 +422,7 @@ sub process_pre_pipeline
 			       ">", \$output);
 	$meta->add_log_entry($0, ["rast-submit-rast-job", $output]);
     }
+    unlink("$job_dir/ACTIVE");
     $meta->set_metadata("status.pre_pipeline", "complete");
 }
 

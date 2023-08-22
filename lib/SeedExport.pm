@@ -7,6 +7,8 @@ use strict;
 use FIG;
 use FIG_Config;
 use FIGV;
+use IO::Handle;
+use IPC::Run;
 use URI::Escape;
 use Bio::FeatureIO;
 use Bio::SeqIO;
@@ -374,10 +376,17 @@ sub export {
 	#
 	# bioperl writes lowercase dna. We want uppercase for biophython happiness.
 	#
-	my $sio = Bio::SeqIO->new(-file => "| sed '/^LOCUS/s/dna/DNA/' >$filename", -format => $format);
+
+	my $pipe = IO::Handle->new;
+	my $h = IPC::Run::start(["sed", "/^LOCUS/s/dna/DNA/"], ">", $filename, "<pipe", $pipe);
+	
+	my $sio = Bio::SeqIO->new(-fh => $pipe, -format => $format);
+	
 	foreach my $seq (keys %$bio) {
 	    $sio->write_seq($bio->{$seq});
 	}
+	close($pipe);
+	$h->finish();
     }
     
     return ($filename, "Output file successfully written.");

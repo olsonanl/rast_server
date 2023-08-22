@@ -298,7 +298,10 @@ sub fix_frameshifts {
     
     my @annotations = ();  # we return an annotaton for each detected frameshift;
     
-    &FIG::run("$FIG_Config::ext_bin/formatdb -i $org_dir/Features/peg/fasta -p T");
+    #    &FIG::run("$FIG_Config::ext_bin/formatdb -i $org_dir/Features/peg/fasta -p T");
+    FIG::run("diamond makedb -d $org_dir/Features/peg/fasta.dmnd -in $org_dir/Features/peg/fasta");
+
+    my $cores = $ENV{P3_ALLOCATED_CPU} // 2;
     
     my %orf;
     foreach my $neigh (@$neighbors) {
@@ -312,7 +315,14 @@ sub fix_frameshifts {
 		    '-p', 'blastp', '-FF',
 		    '-g', 'F',
 		    '-e', '1.0e-20'
-		    ); 
+		   );
+
+	$cmd = "diamond";
+	@args = ("--more-sensitive"
+		 "--threads", $cores,
+		 "-q", "$FIG_Config::organisms/$neigh/Features/peg/fasta",
+		 "--db", $org_dir/Features/peg/fasta.dmnd");
+		 
 	
 	my @sims = map { $_ =~ /^(\S+)\s+(\S+)\s+(\S+)\s+(\S+\s+){3}(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)/;
 			 [$1,$2,$3,$5,$6,$7,$8,$9]
