@@ -53,6 +53,14 @@ if (!GetOptions("parallel=i" => \$parallel,
 my %phase = map { $_ => 1 } @phase;
 
 my $job_dir = shift;
+-d $job_dir or die "$0: Job dir $job_dir does not exist\n";
+
+my $job_id = basename($job_dir);
+
+sub sync_job
+{
+    system("rast_sync", "-job", $job_id);
+}
 
 #
 # Only write process startup log if we're not doing sims
@@ -108,14 +116,19 @@ if ($parallel > 1)
 if ($phase{1})
 {
     &do_upload($job);
+    sync_job();
     &do_rp($job);
+    sync_job();
 }
 
 if ($phase{2})
 {
     &do_qc($job);
+    sync_job();
     &do_correction($job);
+    sync_job();
     &do_sims_preprocess($job);
+    sync_job();
     #
     # After we've preprocessed we know how many tasks we actually need.
     # If our SGE job has more than that, we can prune it away.
@@ -139,6 +152,7 @@ if ($phase{3})
     {
 	&do_sims_diamond($job);
     }
+    sync_job();
 }
 
 if ($phase{S})
@@ -230,13 +244,20 @@ if ($phase{S})
 if ($phase{4})
 {
     &do_sims_postprocess($job);
+    sync_job();
     &do_bbhs($job);
+    sync_job();
     &do_auto_assign($job);
+    sync_job();
     &do_glue_contigs($job);
+    sync_job();
     &do_pchs($job);
+    sync_job();
     # &do_scenario($job);
     &do_export($job);
+    sync_job();
     &mark_job_user_complete($job);
+    sync_job();
 }
 
 sub do_upload

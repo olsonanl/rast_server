@@ -1,0 +1,68 @@
+<h1>Close Strains</h1>
+
+[% IF strain_sets.size > 0 %]
+
+<h2>Available close strain sets</h2>
+
+[% FOR set IN strain_sets %]
+
+[% IF set.status == 'complete' %]
+<h3><a href="[% set.url %]">[% set.name %]</a></h3>
+[% ELSE %]
+<h3>[% set.name %]</h3>
+[% END %]
+
+<table>
+<tr>
+<td>Computation status for this set:</td><td>[% set.status %]</td>
+</tr>
+<tr>
+<td>Last update:</td><td>[% set.last_update %]</td>
+</tr>
+</table>
+<p><a href='?page=[% this_page %]&job=[% this_job.job_id %]'>Click here to update page</a><p>
+
+<table>
+<tr><th>RAST job id</th><th>Genome name</th></tr>
+[% FOR rast IN set.rast %]
+<tr><td>[% rast.job_id %]</td><td>[% rast.name %]</td></tr>
+[% END %]
+<tr><th>Reference genome id</th><th>Genome name</th></tr>
+[% FOR ref IN set.ref %]
+<tr><td>[% ref.genome_id %]</td><td>[% ref.name %]</td></tr>
+[% END %]
+</table>
+
+[% END %]
+
+[% ELSE %]
+
+<h2>No strain sets currently computed </h2>
+
+[% END %]
+
+<hr>
+
+<h2> Select genomes to create close strains set</h2>
+
+<form name="create_close_strains" method="POST" enctype="multipart/form-data">
+<input type="hidden" name="page" value="[% this_page %]">
+<input type="hidden" name="job" value="[% this_job.job_id %]">
+<table>
+<tr><th>RAST job id</th><th>Genome name</th></tr>
+[% FOR rast IN avail_jobs %]
+<tr><td>[% rast.job_id %]</td><td>[% rast.name %]</td></tr>
+[% END %]
+<tr><th>Reference genome id</th><th>Genome name</th></tr>
+[% FOR ref IN avail_refs %]
+<tr><td>[% ref.genome_id %]</td><td>[% ref.name %]</td>
+<td><input type="checkbox" [% IF ref.default %] checked [% END %] name="ref_[% ref.genome_id %]"></td>
+</tr>
+[% END %]
+</table>
+<p>
+Enter additional genomes to be included here. This is a comma or space separated
+list of PubSEED genome IDs, RAST genome IDs, or RAST job numbers:<br>
+<input type="text" name="extra_genomes" size="80"><p>
+<input type="submit" value="Create Close Strains Set" name="create_set">
+</form>

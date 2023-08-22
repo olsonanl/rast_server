@@ -34,11 +34,14 @@ all: bin cp-html
 
 bin: $(BIN_PERL) $(BIN_SERVICE_PERL) $(BIN_CGI_PERL)
 
+.PHONY: cp-html
 cp-html:
 	mkdir -p $(TOP_DIR)/html
 	for i in js images css; do if [[ -d $$i ]] ; then \
+	    echo "Copy $$i"; \
 	    rsync -arv $$i $(TOP_DIR)/html; \
 	fi done
+	rsync -arv css/rast_home.css css/rast.css $(TOP_DIR)/html
 
 
 deploy: deploy-all

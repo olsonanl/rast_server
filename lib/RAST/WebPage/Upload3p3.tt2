@@ -1,0 +1,251 @@
+<script type="text/javascript">
+
+function check_rasttk_customize(form, scheme)
+{
+    var cust = form.elements["rasttk_customize_pipeline"].checked;
+
+    if (cust)
+    {
+	$('.rasttk-show-customize').show();
+    }
+    else
+    {
+	$('.rasttk-show-customize').hide();
+    }
+}
+
+function check_annotation_scheme(form)
+{
+    var radio = form.elements["annotation_scheme"];
+    var value;
+
+    if (radio.tagName == "SELECT")
+    {
+	value = radio.options[radio.selectedIndex].value;
+    }
+    else
+    {
+	for(var i = 0; i < radio.length; i++) {
+	    
+	    if(radio[i].checked) {
+		value = radio[i].value;
+		break;
+	    }
+	}
+    }
+
+    if (value == "ClassicRAST")
+    {
+	$('.ClassicRAST').show();
+	$('.RASTtk').hide();
+	// $('.ClassicRAST td input').removeAttr('disabled');
+	// $('.ClassicRAST td select').removeAttr('disabled');
+    }
+    else
+    {
+	$('.ClassicRAST').hide();
+	$('.RASTtk').show();
+	// $('.ClassicRAST td input').attr('disabled', 'disabled');
+	// $('.ClassicRAST td select').attr('disabled', 'disabled');
+    }
+    check_rasttk_customize(form, value);
+}
+
+function check_gene_caller(form)
+{
+    var oRadio = form.elements["gene_caller"];
+    var value;
+
+    if (oRadio.tagName == "SELECT")
+    {
+	value = oRadio.options[oRadio.selectedIndex].value;
+    }
+    else
+    {
+	for(var i = 0; i < oRadio.length; i++) {
+	    
+	    if(oRadio[i].checked) {
+		value = oRadio[i].value;
+		break;
+	    }
+	}
+    }
+
+    var fix_errors = form.elements["fix_errors"];
+    var fix_frameshifts = form.elements["fix_frameshifts"];
+    var backfill = form.elements["backfill_gaps"];
+    if (value == "glimmer3" || value == "keep")
+    {
+	if (fix_errors)
+	    fix_errors.checked = false;
+	fix_frameshifts.checked = false;
+	backfill.checked = false;
+
+[% IF user_is_admin || user_is_advanced %]
+	if (value == "glimmer3")
+	{
+	    determine_family.checked = false;
+	    determine_family.disabled = true;
+	}
+	else
+	{
+	    determine_family.disabled = false;
+	}
+[% END %]
+
+	if (fix_errors)
+	    fix_errors.disabled = true;
+	fix_frameshifts.disabled = true;
+	backfill.disabled = true;
+    }
+    else
+    {
+	if (fix_errors)
+	    fix_errors.disabled = false;
+	fix_frameshifts.disabled = false;
+	backfill.disabled = false;
+[% IF user_is_admin || user_is_advanced %]
+	determine_family.disabled = false;
+[% END %]
+    }
+}
+
+
+</script>
+
+
+[% form.jshead %]
+<h1> Upload a Genome </h1>
+<h2>Complete Upload</h2>
+[% form.start %]
+[% form.field.stage_sort_order.field -%]
+<p>
+<strong>Please consider the following options for the RAST annotation pipeline:</strong>
+</p>
+<fieldset>
+<legend>RAST Annotation Settings:</legend>
+<table>
+<tr>
+<td> Choose RAST annotation scheme </td>
+<td> [% form.field.annotation_scheme.field %] </td>
+<td><i> Choose "RASTtk" for the current modular customizable production RAST pipeline, or "Classic RAST" for the old pipeline.</i></td>
+<tr class="ClassicRAST">
+<td> Select gene caller</td>
+<td> [% form.field.gene_caller.field %] </td>
+<td><i>Please select which type of gene calling you would like RAST to perform. Note that using GLIMMER-3 will disable automatic error fixing, frameshift correction and the backfilling of gaps.</i></td>
+</tr>
+<tr class="ClassicRAST">
+<td> Select FIGfam version for this run</td>
+<td> [% form.field.figfam_version.field %] </td>
+<td><i>Choose the version of FIGfams to be used to process this genome.</i></td>
+</tr>
+
+<tr class="RASTtk">
+<td>Customize RASTtk pipeline</td>
+<td> [% form.field.rasttk_customize_pipeline.field %]</td>
+<td><i>Customize the RASTtk pipeline </i></td>
+</tr>
+
+<tr class='rasttk-show-customize' class="RASTtk">
+<td></td>
+<td colspan="2">
+<table>
+<thead>
+<tr><th>Stage name</th><th>Enabled</th><th>Parameters</th><th>Condition</th></tr>
+</thead>
+<tbody id="rasttk-workflow">
+[% FOR stage IN stages %]
+<tr class="ui-state-default" id="[% stage.name %]">
+      <td> <span style="display: inline-block" class="ui-icon ui-icon-arrowthick-2-n-s"></span>[% stage.name %]</td>
+      <td>[% form.field.${stage.name}.field %]</td>
+[% IF stage.parameters %]
+<td><table style="border-collapse: collapse;">
+[% FOR param IN stage.parameters %]
+<tr>
+      <td>[% param.caption %]</td>
+      <td>[% form.field.${param.field_name}.field %]</td>
+</tr>
+[% END %]
+</table></td>
+[% ELSE %]
+<td></td>
+[% END %]
+      <td>[% form.field.${stage.condition_name}.field %]</td>
+
+</tr>
+[% END %]
+</tbody>
+</table>
+</td>
+</tr>
+
+[% IF domain != "Virus" %]
+<tr>
+<td> Automatically fix errors?</td>
+<td> [% form.field.fix_errors.field %] </td>
+<td><i>The automatic annotation process may run into problems, such as gene candidates overlapping RNAs, or genes embedded inside other genes. To automatically resolve these problems (even if that requires deleting some gene candidates), please check this box.
+</i></td>
+</tr>
+[% END %]
+<tr>
+<td> Fix frameshifts?</td>
+<td> [% form.field.fix_frameshifts.field %] </td>
+<td><i>If you wish for the pipeline to fix frameshifts, check this option. Otherwise frameshifts will not be corrected.</i></td>
+</tr>
+[% IF user_is_admin || user_is_advanced %]
+<tr class="ClassicRAST">
+<td> Determine FIGFAM membership for assignments? </td>
+<td> [% form.field.determine_family.field %] </td>
+<td><i>If you wish RAST to narrow each functional role called to the particular FIGFAM that induced it, check this option.</i></td>
+</tr>
+[% END %]
+[% IF allow_model_building || user_is_advanced %]
+<tr>
+<td> Build metabolic model? </td>
+<td> [% form.field.build_models.field %] </td>
+<td><i>If you wish RAST to build a metabolic model for this genome, check this option.</i></td>
+</tr>
+[% END %]
+<tr class="ClassicRAST">
+<td> Backfill gaps?</td>
+<td> [% form.field.backfill_gaps.field %] </td>
+<td><i>If you wish for the pipeline to blast large gaps for missing genes, check this option.</i></td>
+</tr>
+<tr>
+<td> Turn on debug?</td>
+<td> [% form.field.enable_debug.field %] </td>
+<td><i>If you wish debug statements to be printed for this job, check this box.</i></td>
+</tr>
+<tr>
+<td> Set verbose level </td>
+<td> [% form.field.verbose_level.field %] </td>
+<td><i>Set this to the verbosity level of choice for error messages.</i></td>
+</tr>
+<tr>
+<td> Disable replication </td>
+<td> [% form.field.disable_replication.field %] </td>
+<td><i>Even if this job is identical to a previous job, run it from scratch.</i></td>
+</tr>
+</table>
+</fieldset>
+
+[% form.submit %]
+[% form.end %]
+
+<script type="text/javascript">
+$(document).ready( function ($) {
+  var form = $("#upload_form");
+  check_annotation_scheme(form[0]);
+  check_gene_caller(form[0]);
+  var wf = $( "#rasttk-workflow" );
+
+  var s = wf.sortable({
+    deactivate: function( event, ui ) {
+      form[0].stage_sort_order.value = wf.sortable("toArray");
+    }
+  });
+  form[0].stage_sort_order.value = wf.sortable("toArray");
+  $( "#rasttk-workflow" ).disableSelection();
+
+});
+</script>

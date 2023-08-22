@@ -1,0 +1,246 @@
+[% form.jshead %]
+<script type="text/javascript">
+function lookup_taxid(form)
+{
+    var id = form.elements['taxonomy_id'].value;
+
+    var http_request;
+    var agt=navigator.userAgent.toLowerCase();
+    if (agt.indexOf("msie") != -1) {
+	no_load_image = 1;
+	try {
+	    http_request = new ActiveXObject("Microsoft.XMLHTTP");
+	}
+	catch (err) {
+	    alert('You must enable ActiveX in your security settings to view all features of this page.');
+	}
+    } else {
+	http_request = new XMLHttpRequest();
+	http_request.overrideMimeType('text/plain');
+    }
+
+    var parameters = "";
+
+    parameters = parameters + "tax_id=" + encodeURIComponent(id);
+    
+    var script_url = form.elements['ajax_url'].value;
+    http_request.onreadystatechange = function() { ajax_result(http_request, id, form); };
+
+    form.elements['lookup'].value = "Lookup in progress...";
+    http_request.open('POST', script_url, true);
+    http_request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    http_request.send(parameters);
+}
+
+function ajax_result (http_request, tax_id, form) {
+    if (http_request.readyState == 4) {
+//	alert("state=" +http_request.readyState + " " + http_request.responseText);
+	form.elements['lookup'].value = "Fill in form based on NCBI taxonomy-ID.";
+	var obj;
+	try {
+	    obj = JSON.parse(http_request.responseText);
+	} catch (err)
+	{
+	    obj = null;
+	}
+	if (obj == null || obj.domain == "")
+	{ 
+	    alert("Could not find taxonomy id " + tax_id + " at NCBI.");
+	    return;
+	}
+	set_radio(form, "domain", obj.domain);
+	set_form_field(form, "taxonomy_string", obj.taxonomy);
+	set_radio(form, "genetic_code", obj.genetic_code);
+	set_form_field(form, "genus", obj.genus);
+	set_form_field(form, "species", obj.species);
+	set_form_field(form, "strain", obj.strain);
+    }
+}
+
+function set_form_field(form, name, val)
+{
+    var elt = form.elements[name];
+    if (elt == null)
+    {
+	return;
+    }
+
+    elt.value = val;
+}
+
+function set_radio(form, name, val) {
+    var elt = form.elements[name];
+    if (elt == null)
+    {
+	return;
+    }
+
+    for (var loop = 0; loop < elt.length; loop++)
+    {
+	if (elt[loop].value == val)
+	{
+	    elt[loop].checked = 1;
+	}
+	else
+	{
+	    elt[loop].checked = 0;
+	}
+    }
+}
+
+</script>
+
+
+
+[%#
+# Main body of web-form
+%]
+<h1> Upload a Genome </h1>
+
+
+
+[%#
+# Display upload statistics
+%]
+<h2>Review genome data</h2>
+<p>
+<strong>We have analyzed your upload and have computed the following information.</strong>
+</p>
+
+[% statistics %]
+
+
+
+[%#
+# Genome Metadata entry
+%]
+<h2>Please enter or verify the following information about this organism:</h2>
+
+<ul>
+<li>
+RAST bases its genome identifiers on NCBI taxonomy-IDs.
+</li>
+
+<li>
+If you provide a valid taxonomy-ID, RAST will attempt to fill in the genome metadata for you.<br>
+</li>
+
+<li>
+If you leave the taxonomy-ID field blank, RAST will assign a meaningless taxonomy-ID,
+and you will need to fill in the below genome metadata manually.<br>
+</li>
+
+<li>
+If you plan on submitting this genome to 
+<a href="http://patricbrc.org/">PATRIC</a>
+you will need to provide the most descriptive NCBI taxonomic grouping possible.
+If you leave the taxonomy-ID field blank, RAST will assign a meaningless taxonomic identifier
+and the genome will not be suitable for submission to PATRIC. 
+We discuss the motivation and process for submitting your genome to PATRIC
+<a href="Html/PATRIC_Submission.html">in this document</a>.</i>
+</li>
+
+<li>
+You may search for the taxonomy-ID of your organism using the search 
+facilities at the
+<a target="_blank" href="http://www.ncbi.nlm.nih.gov/Taxonomy/taxonomyhome.html/">
+NCBI taxonomy browser</a>. </td>
+</li>
+</ul>
+
+
+[% form.start %]
+[% form.field.ajax_url.field %]
+<fieldset>
+<legend>Genome information:</legend>
+<div id="organism">
+<table>
+<tr>
+
+<tr>
+<td>
+	<strong>Taxonomy ID:</strong>
+</td>
+<td>[% form.field.taxonomy_id.field %]
+	<input type="button"
+	onclick="lookup_taxid(this.form)"
+	name="lookup"
+	value="Fill in form based on NCBI taxonomy-ID.">
+</td>
+
+<td>
+<ul>
+<li> If you enter a valid NCBI taxonomy-ID and click "Fill in form based on NCBI taxonomy-ID,"
+RAST will attempt to automatically fill in the form below.
+You may then edit any incorrect field values before going to the next step.
+</li>
+
+<li>
+If you do not know the taxonomy-ID of your genome, please leave the taxonomy-ID field blank,
+and fill in the fields manually.
+</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td><strong>Taxonomy string:</strong></td>
+<td>[% form.field.taxonomy_string.field %] </td>
+<td>
+<ul>
+<li>If you leave this field blank, RAST will fill in a dummy taxonomy string
+of the form <i>"Domain; genus species strain.",
+based on the form entries below.</i>
+</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td><strong>Domain:</strong></td>
+<td>[% form.field.domain.field %] </td>
+</tr>
+
+<tr>
+<td> <strong>Genus:</strong></td>
+<td> [% form.field.genus.field %] </td>
+<td> 
+<ul>
+<li>E.g., <i>"Escherichia".</i> If you do not know the genus, leave blank, and it will default to "Unknown".
+</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td> <strong>Species:</strong></td>
+<td> [% form.field.species.field %] </td>
+<td>
+<ul>
+<li>E.g., <i>"coli".</i> If you do not know the species, leave blank, and it will default to "sp.".
+</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td> <strong>Strain:</strong></td>
+<td> [% form.field.strain.field %] </td>
+<td>
+<ul>
+<li> E.g. <i>"str. K12 substr. MG1655".</i> This field is optional. (May also be used as a comment.)
+</li>
+</ul>
+</td>
+</tr>
+
+<tr>
+<td> <strong><a target="_blank" href="http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi">Genetic Code:</a></strong></td>
+<td> [% form.field.genetic_code.field %] </td>
+</tr>
+
+</table>
+</div>
+</fieldset>
+[% form.submit %]
+[% form.end %]
+

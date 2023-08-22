@@ -15,7 +15,7 @@ my($opt, $usage) = describe_options("%c %o jobdir",
 				    ['template=s' => "Override default submission template"],
 				    ['replicate=s' => "Submit a replication job. Value is the source job"],
 				    ['skip-sims' => "Skip similarity computation"],
-				    ['sims-cpus=i' => "Number of cpus for sims computation", { default => 4 }],
+				    ['cpus=i' => "Number of cpus", { default => 4 }],
 				    ['dry-run' => "Do a dry run"],
 				    ['partition=s' => "Use this partition", { default => 'shared' }],
 				    ["output-directory|o=s" => "Slurm output directory"],
@@ -100,6 +100,7 @@ sub submit_annotate
 		       ($opt->container ? ("--container", $opt->container) : ()),
 		       "--partition" => $opt->partition,
 		       "--template", $template,
+		       "--cpus", $opt->cpus,
 		       "--output-directory", $output_dir);
 
     my @sim_phase;

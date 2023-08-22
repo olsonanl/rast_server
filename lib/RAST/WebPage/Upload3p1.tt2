@@ -1,0 +1,118 @@
+<h1> Upload a Genome</h1>
+
+[% IF errors == '' %]
+
+<p>
+<strong>Please note:</strong>
+This service is not a BLAST-like service.
+It is designed to annotate complete or nearly complete (&gt;97%) assembled prokaryotic genomes, and complete phages or plasmids.
+<br>
+It cannot analyze eukaryotes, small fragments of genomes, unassembled reads, or metagenomes.
+</p>
+
+<p>
+You may upload a prokaryotic genome in one or more contigs,
+as either a single multitrecord
+<a target=_blank href='http://en.wikipedia.org/wiki/Fasta_format'>FASTA</a> format file
+or a Genbank format file.
+</p>
+
+<p>
+Our pipeline will use the taxonomy identifier as a handle for the genome.
+Therefore if at all possible please input the numeric
+<a href='http://www.ncbi.nlm.nih.gov/Taxonomy/taxonomyhome.html/index.cgi'>taxonomy identifier,</a>
+and genus, species and strain in the following upload workflow.
+</p>
+
+<p>
+Please note that RAST will only provide you with its most complete analysis,
+including <em>Subsystems,</em> <em>Metabolic Reconstruction</em> and <em>Scenarios,</em>
+if you submit all relevant contigs from your organism as a single job,
+i.e., all chromosomes, if more then one, and all plasmids.
+</p>
+
+<p>If you wish to upload multiple genomes at once, you may be interested
+in using the batch upload interface that is available in the 
+<a href="http://blog.theseed.org/servers/installation/distribution-of-the-seed-server-packages.html">myRAST distribution.</a>
+See <a href="http://blog.theseed.org/servers/usage/the-rast-batch-interface.html">this
+tutorial</a> for more information on this capability.</p>
+
+<p><strong>Confidentiality information:</strong> Data entered into the
+server will not be used for any purposes or in fact integrated into
+the main SEED environment, it will remain on this server for 120 days
+or until deleted by the submitting user. </p>
+
+<p><strong>If you use the results of this annotation in your work, please cite:</strong><br/>
+<ul>
+<li>
+<em>The RAST Server: Rapid Annotations using Subsystems Technology.</em><br/>
+Aziz RK, Bartels D, Best AA, DeJongh M, Disz T, Edwards RA, Formsma K,
+Gerdes S, Glass EM, Kubal M, Meyer F, Olsen GJ, Olson R, Osterman AL,
+Overbeek RA, McNeil LK, Paarmann D, Paczian T, Parrello B, Pusch GD,
+Reich C, Stevens R, Vassieva O, Vonstein V, Wilke A, Zagnitko O.<br/>
+<em>BMC Genomics,</em> 2008,
+[ <a href="http://www.ncbi.nlm.nih.gov/pubmed/18261238"
+target="_blank">PubMed entry</a> ]</em>
+</li>
+
+<li><em>The SEED and the Rapid Annotation of microbial genomes using Subsystems Technology (RAST).</em><br/>
+Overbeek R, Olson R, Pusch GD, Olsen GJ, Davis JJ, Disz T, Edwards RA,
+Gerdes S, Parrello B, Shukla M, Vonstein V, Wattam AR, Xia F, Stevens R.
+</br/>
+<em>Nucleic Acids Res.</em> 2014 
+[ <a
+href="http://www.ncbi.nlm.nih.gov/pubmed/?term=24293654"
+target="_blank">PubMed entry</a> ]
+</li>
+
+<li>
+<em>RASTtk: A modular and extensible implementation of the RAST algorithm for 
+building custom annotation pipelines and annotating batches of genomes.</em><br/>
+Brettin T, Davis JJ, Disz T, Edwards RA, Gerdes S, Olsen GJ, Olson R, Overbeek R, 
+Parrello B, Pusch GD, Shukla M, Thomason JA, Stevens R, Vonstein V, Wattam AR, Xia F.<br/>
+<em>Sci Rep.,</em> 2015,
+[ <a href="http://www.ncbi.nlm.nih.gov/pubmed/25666585"
+target="_blank">PubMed entry</a> ]</em>
+</li>
+
+</ul>
+
+<p><strong>File formats:</strong> You can either use 
+<a target=_blank href='http://en.wikipedia.org/wiki/Fasta_format'>FASTA</a>
+or Genbank format.
+</p>
+
+<ul><li>If in doubt about FASTA, <a target=_blank href='http://thr.cit.nih.gov/molbio/readseq/'>this service</a> 
+allows conversion into FASTA format.</li>
+
+<li>Due to limits on identifier sizes imposed by some of the 
+third-party bioinformatics tools that RAST uses, we limit
+the size of contig identifiers to 70 characters or fewer.</li>
+
+<li>If you use GenBank, you have the option of preserving the original GenBank gene calls
+in the options block below.
+By default, genes will be recalled.</li>
+</ul>
+
+[% ELSE %]
+<h2>Upload Error</h2>
+
+There was an error with your genome upload:
+<p>
+[% errors %]
+</p>
+[% END %]
+
+[% form.start %]
+<fieldset> 
+<legend>File Upload:</legend>
+<table>
+<tr><td>Sequences File</td>
+
+<td>[% form.field.sequences_file.field %] </td>
+</tr>
+</table>
+</fieldset>
+<p>
+[% form.submit %]
+[% form.end %]

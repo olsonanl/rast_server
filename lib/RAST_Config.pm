@@ -16,6 +16,7 @@ $try_sim_server = 1;
 my $shost = "gum.mcs.anl.gov";
 $sim_server_url = "http://$shost/simserver/perl/sims.pl";
 
+$daily_statistics_dir = "/vol/public-pseed/SharedData/DailyStatistics";
 
 1;
 

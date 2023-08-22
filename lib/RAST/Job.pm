@@ -558,7 +558,7 @@ sub stages_for_rast
 {
     return [ 'status.uploaded', 'status.rp', 'status.qc', 'status.correction',
 	     'status.sims', 'status.bbhs', 'status.auto_assign', 
-	     'status.pchs', 'status.scenario', 'status.export', 'status.final' ];
+	     'status.pchs', 'status.export', 'status.final' ];
 }
 
 sub stages_for_mgrast_1
