@@ -2,6 +2,7 @@ package FIG_Config;
 
 $fortyeight_jobs = "/scratch/olson/RAST/jobs";
 $rast_jobs = "/scratch/olson/RAST/jobs";
+$general_jobdir = "/scratch/olson/RAST/general_jobs";
 
 $rast_sims_data = '/vol/rast-prod/NR-SEED/nr.with.phages';
 
@@ -19,4 +20,3 @@ $sim_server_url = "http://$shost/simserver/perl/sims.pl";
 $daily_statistics_dir = "/vol/public-pseed/SharedData/DailyStatistics";
 
 1;
-

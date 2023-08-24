@@ -15,17 +15,21 @@ use FileHandle;
 use Sim;
 use GeneralJob;
 use FileLocking qw(lock_file unlock_file);
-use SGE;
+use File::Slurp;
+use Getopt::Long::Descriptive;
 
 my $meta;
 
-@ARGV > 0 or die "Usage: $0 job-id job-id ...\n";
+my($opt, $usage) = describe_options("%c %o login job-id job-id ...",
+				    ["dry-run", "Don't actually run the job"],
+				    ["help|h", "Show this help message"]);
+print($usage->text), exit 0 if $opt->help;
+die($usage->text) if @ARGV < 3;
 
+my $login = shift;
 my @job_ids = @ARGV;
 
 $FIG_Config::general_jobdir ne '' or die "\$FIG_Config::general_jobdir must be set\n";
-
-my $sge = new SGE;
 
 #
 #
@@ -100,6 +104,19 @@ for my $j1idx (0..@jobs-1)
     close(LF);
 }
 
+if (%need == 0)
+{
+    print "No compute needed\n";
+    exit 0;
+}
+
+my $jobid = GeneralJob->create_new_job($FIG_Config::general_jobdir);
+my $job = GeneralJob->new($FIG_Config::general_jobdir, $jobid);
+
+my $work = $job->dir;
+write_file("$work/USER", "$login\n");
+
+open(PAIRLIST, ">", "$work/pairs") or die "Cannot write $work/pairs: $!";
 for my $pair (sort keys %need)
 {
     my ($j1idx, $j2idx) = split(/$;/, $pair);
@@ -108,32 +125,21 @@ for my $pair (sort keys %need)
     #print "Need to compute $id $jobdir $genome $orgdir\n";
     print "need to compute $j1idx $j2idx\n";
 
-    my $jobid = GeneralJob->create_new_job($FIG_Config::general_jobdir);
-
-    my $job = GeneralJob->new($FIG_Config::general_jobdir, $jobid);
-
     mark_queued($j1idx, $j2idx);
 
     my $j1 = $jobs[$j1idx]->[0];
     my $j2 = $jobs[$j2idx]->[0];
 
-    my $work = $job->dir;
-    mkdir "$work/sge_output";
-
-    my @args = (-N => "p${j1}_${j2}",
-		-e => "$work/sge_output",
-		-o => "$work/sge_output",
-		-v => "PATH",
-		-b => "yes",
-		);
-    my $args = join(" ", @args);
-
-    my $cmd = "$FIG_Config::bin/rp_compute_peer_sim_pair $work $j1 $j2";
-    my $jobid = $sge->submit_job($job->meta, $args, $cmd);
-
-    print "Submitted $jobid\n";
+    print PAIRLIST "$j1\t$j2\n";
 }
+close(PAIRLIST);
 
+my $rc = system("rast-submit-rast-job",
+		($opt->dry_run ? ("--dry-run") : ()),
+		"--peer-sims", $work,
+		"--cpus", 4);
+$rc == 0 or die "Error submitting job\n";
+print "Submitted $jobid\n";
 
 sub mark_queued
 {

@@ -20,6 +20,7 @@ use strict;
 use FIG;
 use FIG_Config;
 use File::Basename;
+use File::Path qw(make_path);
 use GenomeMeta;
 use FileHandle;
 use Sim;
@@ -124,10 +125,19 @@ for my $file (@fasta_files)
 }
 close($fasta_fh);
 
-&run("$FIG_Config::ext_bin/formatdb", "-p", "t", "-i", $all_fasta);
+my $threads = $ENV{P3_ALLOCATED_CPU} // 2;
 
-&run("$FIG_Config::ext_bin/blastall", @blast_args, "-i", $all_fasta, "-d", $all_fasta,
+run("diamond", "makedb", "--in", $all_fasta, "--db", "$all_fasta.dmnd");
+#&run("$FIG_Config::ext_bin/formatdb", "-p", "t", "-i", $all_fasta);
+
+&run("diamond", "blastp",
+     "--very-sensitive",
+     "--query", $all_fasta,
+     "--db", "$all_fasta.dmnd",
+     "--threads", $threads,
      "-o", "$workdir/sims.raw");
+#&run("$FIG_Config::ext_bin/blastall", @blast_args, "-i", $all_fasta, "-d", $all_fasta,
+#     "-o", "$workdir/sims.raw");
 
 &run("$FIG_Config::bin/reformat_sims $all_fasta < $workdir/sims.raw > $workdir/sims.final");
 
@@ -152,9 +162,11 @@ while (<S>)
 	if (!$fh)
 	{
 	    my $sdir = "$genome_to_dir{$g1}/sims";
-	    -d $sdir or mkdir $sdir or &fatal("cannot mkdir $sdir: $!");
+#	    my $sdir = "$genome_to_dir{$g1}/sims/$g2";
+	    make_path($sdir);
 	    
 	    open($fh, ">", "$sdir/$g2") or &fatal("cannot write $sdir/$g2: $!");
+#	    open($fh, ">", "$sdir/sims") or &fatal("cannot write $sdir/sims: $!");
 	    push(@new_files, "$sdir/$g2");
 	    $fhh{$g1, $g2} = $fh;
 	}

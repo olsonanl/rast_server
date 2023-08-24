@@ -21,6 +21,7 @@ my($opt, $usage) = describe_options("%c %o jobdir [jobdir...]",
 				    ['template=s' => "Job submission template"],
 				    ['replicate=s' => "Run a replication job. Parameter is the job to replicate from"],
 				    ['close-strains=s' => "Submit a close-strains computation job. Value is close strains dir" ],
+				    ['peer-sims' => "Submit a peer-sims job."],
 				    ['phase=s@' => "Job phase to run"],
 				    ['depend=i' => "Job number to depend on before this can run"],
 				    ['tasks=i' => "Run task array job with this many tasks"],
@@ -40,10 +41,11 @@ my %what;
 $what{phase}++ if $opt->phase;
 $what{replicate}++ if $opt->replicate;
 $what{close_strains}++ if $opt->close_strains;
+$what{peer_sims}++ if $opt->peer_sims;
 
 if (keys %what > 1)
 {
-    die "Only one of --phase, --replicate, and --close-strains may be specified";
+    die "Only one of --phase, --replicate, --peer-sims, and --close-strains may be specified";
 }
 
 if ($opt->phase)
@@ -53,6 +55,10 @@ if ($opt->phase)
 elsif ($opt->close_strains)
 {
     $app = "close_strains";
+}
+elsif ($opt->peer_sims)
+{
+    $app = "peer_sims";
 }
 else
 {
@@ -132,6 +138,10 @@ if ($opt->phase)
 elsif ($opt->close_strains)
 {
     $vars{sbatch_job_name} = "CS" . "-" . join(",", @job_ids);
+}
+elsif ($opt->peer_sims)
+{
+    $vars{sbatch_job_name} = "P" . "-" . join(",", @job_ids);
 }
 else
 {

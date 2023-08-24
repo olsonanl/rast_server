@@ -44,7 +44,7 @@ sub create_new_job {
     # init job counter if necessary
     umask 0000;
     unless (-f "$jobs_dir/JOBCOUNTER") {
-	open(FH, ">$jobs_dir/JOBCOUNTER") or die "could not create jobcounter file: $!\n";
+	open(FH, ">$jobs_dir/JOBCOUNTER") or die "could not create jobcounter file $jobs_dir/JOBCOUNTER: $!\n";
 	print FH "1";
 	close FH;
     }
@@ -53,7 +53,7 @@ sub create_new_job {
     # get new job id from job counter
     # Carefully lock and fsync().
     #
-    open(FH, "+<$jobs_dir/JOBCOUNTER") or die "could not open jobcounter file: $!\n";
+    open(FH, "+<$jobs_dir/JOBCOUNTER") or die "could not open jobcounter file $jobs_dir/JOBCOUNTER: $!\n";
     FH->autoflush(1);
     lock_file(\*FH);
     seek(FH, 0, SEEK_SET);

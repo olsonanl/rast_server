@@ -46,6 +46,7 @@ cat > $script_name <<"EOF"
 #!/bin/bash -x
 
 source [% rast_installation %]/user-env.sh
+jobdir=[% job.directory %]
 
 [% IF application == "annotate" -%]
 
@@ -58,6 +59,13 @@ svr_CS -d [% close_strains_dir %] --fill-in-refs
 [% ELSIF application == "replicate" -%]
 
 replicate_job [% job.old_directory %] [% job.directory %]
+
+[% ELSIF application == "peer_sims" -%]
+
+cat $jobdir/pairs | while read x y; do
+    mkdir -p $jobdir/sim_pairs/$x.$y
+    rp_compute_peer_sim_pair $jobdir/sim_pairs/$x.$y $x $y
+done
 
 [% END -%]
 

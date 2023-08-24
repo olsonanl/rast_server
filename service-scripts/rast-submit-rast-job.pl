@@ -15,6 +15,7 @@ my($opt, $usage) = describe_options("%c %o jobdir",
 				    ['template=s' => "Override default submission template"],
 				    ['replicate=s' => "Submit a replication job. Value is the source job"],
 				    ['close-strains=s' => "Submit a close-strains computation job. Value is close strains dir" ],
+				    ['peer-sims' => "Submit a peer-sims job."],
 				    ['skip-sims' => "Skip similarity computation"],
 				    ['cpus=i' => "Number of cpus", { default => 4 }],
 				    ['dry-run' => "Do a dry run"],
@@ -91,6 +92,10 @@ if ($opt->replicate)
 elsif ($opt->close_strains)
 {
     submit_close_strains();
+}
+elsif ($opt->peer_sims)
+{
+    submit_peer_sims();
 }
 else
 {
@@ -179,6 +184,31 @@ sub submit_close_strains
     my($p1) = $out =~ /(\d+)/;
     print "Submitted close strains job $p1\n";
     print LOG "Submitted close strains job $p1\n";
+}
+
+
+sub submit_peer_sims
+{
+    my @submit_prog = ("rast-submit-rast-job-phase",
+		       ($opt->dry_run ? ("--dry-run") : ()),
+		       "--peer-sims", 
+		       @container_param,
+		       "--partition" => $opt->partition,
+		       "--template", $template,
+		       "--cpus", $opt->cpus,
+		       "--output-directory", $output_dir);
+    
+    
+    my $out;
+    my $now = strftime('%Y-%m-%d %H:%M:%S', localtime);
+    my $ok = run([@submit_prog, $jobdir], ">", \$out);
+
+    print $out if ($opt->dry_run);
+	
+    $ok or die  "Peer sims submit failed with $?";
+    my($p1) = $out =~ /(\d+)/;
+    print "Submitted peer simsjob $p1\n";
+    print LOG "Submitted peer sims job $p1\n";
 }
 
 

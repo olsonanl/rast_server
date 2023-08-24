@@ -124,10 +124,18 @@ update_state(1, 0);
 
 &run("/bin/cp", $fasta_files[0], "$workdir/fasta");
 &run("/bin/cp", $fasta_files[1], "$workdir/db");
-&run("$FIG_Config::ext_bin/formatdb", "-p", "t", "-i", "$workdir/db");
+&run("diamond", "makedb", "--in", "$workdir/db", "--db", "$workdir/db.dmnd");
+#&run("$FIG_Config::ext_bin/formatdb", "-p", "t", "-i", "$workdir/db");
 
-&run("$FIG_Config::ext_bin/blastall", @blast_args, "-i", "$workdir/fasta", "-d", "$workdir/db",
+my $threads = $ENV{P3_ALLOCATED_CPU} // 2;
+
+&run("diamond", "blastp",
+     "--threads", $threads,
+     "--query", "$workdir/fasta",
+     "--db", "$workdir/db.dmnd",
      "-o", "$workdir/sims.raw");
+#&run("$FIG_Config::ext_bin/blastall", @blast_args, "-i", "$workdir/fasta", "-d", "$workdir/db",
+#     "-o", "$workdir/sims.raw");
 
 &run("$FIG_Config::bin/reformat_sims $workdir/fasta $workdir/db < $workdir/sims.raw > $workdir/sims.fwd");
 &run("$FIG_Config::bin/flip_sims", "$workdir/sims.fwd", "$workdir/sims.rev");
