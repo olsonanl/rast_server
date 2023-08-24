@@ -1,0 +1,19 @@
+
+p#section_bar {
+    background: #cecece; 
+    width: 70%; 
+    padding: 3px;
+}
+
+p#section_content {
+    width: 70%;
+}
+
+#section_bar img {
+    padding-right: 10px; 
+    vertical-align: middle;
+}
+
+.tab_view_content_td {
+    padding: 5px 10px 10px 10px;
+}

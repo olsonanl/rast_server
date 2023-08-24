@@ -14,6 +14,7 @@ my($opt, $usage) = describe_options("%c %o jobdir",
 				    ['container=s' => "Container to use "],
 				    ['template=s' => "Override default submission template"],
 				    ['replicate=s' => "Submit a replication job. Value is the source job"],
+				    ['close-strains=s' => "Submit a close-strains computation job. Value is close strains dir" ],
 				    ['skip-sims' => "Skip similarity computation"],
 				    ['cpus=i' => "Number of cpus", { default => 4 }],
 				    ['dry-run' => "Do a dry run"],
@@ -30,6 +31,7 @@ my $job = basename($jobdir);
 
 my $skip = $opt->skip_sims;
 
+my @container_param;
 if ($opt->container)
 {
     if (-f $opt->container)
@@ -41,12 +43,14 @@ if ($opt->container)
 	    die "Failed to inspect container " . $opt->container . " \n";
 	}
 	print "Submitting job $job to container " . $opt->container . " with metadata:\n$info\n";
+	@container_param = ("--container", $opt->container);
     }
     else
     {
 	die "Container " . $opt->container . " not present\n";
     }
 }
+
 #
 # Find our submission template.
 #
@@ -84,6 +88,10 @@ if ($opt->replicate)
 {
     submit_replicate();
 }
+elsif ($opt->close_strains)
+{
+    submit_close_strains();
+}
 else
 {
     submit_annotate();
@@ -97,7 +105,7 @@ sub submit_annotate
 
     my @submit_prog = ("rast-submit-rast-job-phase",
 		       ($opt->dry_run ? ("--dry-run") : ()),
-		       ($opt->container ? ("--container", $opt->container) : ()),
+		       @container_param,
 		       "--partition" => $opt->partition,
 		       "--template", $template,
 		       "--cpus", $opt->cpus,
@@ -130,14 +138,15 @@ sub submit_replicate
     my @submit_prog = ("rast-submit-rast-job-phase",
 		       ($opt->dry_run ? ("--dry-run") : ()),
 		       "--replicate", $opt->replicate,
-		       "--container", $opt->container,
+		       @container_param,
+		       "--partition" => $opt->partition,
 		       "--template", $template,
 		       "--output-directory", $output_dir);
     
     
     my $out;
     my $now = strftime('%Y-%m-%d %H:%M:%S', localtime);
-    my $ok = run([@submit_prog, $job], ">", \$out);
+    my $ok = run([@submit_prog, $jobdir], ">", \$out);
 
     print $out if ($opt->dry_run);
 	
@@ -145,6 +154,31 @@ sub submit_replicate
     my($p1) = $out =~ /(\d+)/;
     print "Submitted replication from " . $opt->replicate . " job $p1\n";
     print LOG "Submitted replication from " . $opt->replicate . " job $p1\n";
+}
+
+
+sub submit_close_strains
+{
+    my @submit_prog = ("rast-submit-rast-job-phase",
+		       ($opt->dry_run ? ("--dry-run") : ()),
+		       "--close-strains", $opt->close_strains,
+		       @container_param,
+		       "--partition" => $opt->partition,
+		       "--template", $template,
+		       "--cpus", $opt->cpus,
+		       "--output-directory", $output_dir);
+    
+    
+    my $out;
+    my $now = strftime('%Y-%m-%d %H:%M:%S', localtime);
+    my $ok = run([@submit_prog, $jobdir], ">", \$out);
+
+    print $out if ($opt->dry_run);
+	
+    $ok or die  "Close strains submit failed with $?";
+    my($p1) = $out =~ /(\d+)/;
+    print "Submitted close strains job $p1\n";
+    print LOG "Submitted close strains job $p1\n";
 }
 
 

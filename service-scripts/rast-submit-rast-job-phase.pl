@@ -20,6 +20,7 @@ my($opt, $usage) = describe_options("%c %o jobdir [jobdir...]",
 				    ['container=s' => "Container to use for job execution"],
 				    ['template=s' => "Job submission template"],
 				    ['replicate=s' => "Run a replication job. Parameter is the job to replicate from"],
+				    ['close-strains=s' => "Submit a close-strains computation job. Value is close strains dir" ],
 				    ['phase=s@' => "Job phase to run"],
 				    ['depend=i' => "Job number to depend on before this can run"],
 				    ['tasks=i' => "Run task array job with this many tasks"],
@@ -35,20 +36,26 @@ my $app;
 
 my @job_dirs = @ARGV;
 
+my %what;
+$what{phase}++ if $opt->phase;
+$what{replicate}++ if $opt->replicate;
+$what{close_strains}++ if $opt->close_strains;
+
+if (keys %what > 1)
+{
+    die "Only one of --phase, --replicate, and --close-strains may be specified";
+}
+
 if ($opt->phase)
 {
-    if ($opt->replicate)
-    {
-	die "Only one of phase and replicate may be specified";
-    }
     $app = "annotate";
+}
+elsif ($opt->close_strains)
+{
+    $app = "close_strains";
 }
 else
 {
-    if (!$opt->replicate)
-    {
-	die "Job phase or replication required\n";
-    }
     if (@job_dirs > 1)
     {
 	die "Only one job id may be specified for replication";
@@ -76,6 +83,7 @@ my @jobs;
 
 my %vars = (container_repo_url => 'https://p3.theseed.org/containers',
 	    cluster_temp => '/disks/tmp',
+	    close_strains_dir => $opt->close_strains,
 	    container_filename => '',
 	    container_cache_dir => '',
 	    container_image => $container,
@@ -120,6 +128,10 @@ $vars{sbatch_account} = $account;
 if ($opt->phase)
 {
     $vars{sbatch_job_name} = "R" . join("", @{$opt->phase}) . "-" . join(",", @job_ids);
+}
+elsif ($opt->close_strains)
+{
+    $vars{sbatch_job_name} = "CS" . "-" . join(",", @job_ids);
 }
 else
 {

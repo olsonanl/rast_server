@@ -1,0 +1,22 @@
+div#home {
+    margin: 30px 30px 0px 30px;
+}
+
+
+#home p {
+    text-align: justify;
+}
+
+#home p.motd {
+    border: 1px solid black;
+    padding: 5px;
+    margin-bottom: 20px;
+}
+
+#home th { 
+    vertical-align: top;
+}
+
+#home td { 
+    vertical-align: top;
+}

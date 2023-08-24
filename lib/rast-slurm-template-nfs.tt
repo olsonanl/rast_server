@@ -40,7 +40,9 @@ export WORKDIR=$rast_jobdir/slurm_work/$SLURM_JOB_ID
 mkdir -p $WORKDIR
 cd $WORKDIR
 
-cat > run_annotation.[% job.id %] <<"EOF"
+script_name="run_[% application %].[% job.id %].$SLURM_JOB_ID"
+
+cat > $script_name <<"EOF"
 #!/bin/bash -x
 
 source [% rast_installation %]/user-env.sh
@@ -49,6 +51,10 @@ source [% rast_installation %]/user-env.sh
 
 batch_rast [% FOR phase IN phases %] --phase [% phase %] [% END %] [% job.directory %]
 
+[% ELSIF application == "close_strains" -%]
+
+svr_CS -d [% close_strains_dir %] --fill-in-refs
+
 [% ELSIF application == "replicate" -%]
 
 replicate_job [% job.old_directory %] [% job.directory %]
@@ -56,12 +62,12 @@ replicate_job [% job.old_directory %] [% job.directory %]
 [% END -%]
 
 EOF
-chmod +x run_annotation.[% job.id %]
+chmod +x $script_name
 
 export TMPDIR=/disks/tmp
 export TEMPDIR=/dsks/tmp
 
-./run_annotation.[% job.id %] &
+./$script_name &
 
 pid_[% job.id %]=$!
 echo "job [% job.id %] has pid $pid_[% job.id %]"

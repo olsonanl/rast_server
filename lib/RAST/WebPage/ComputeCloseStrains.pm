@@ -9,10 +9,12 @@ use base qw( WebPage );
 use WebConfig;
 use Template;
 use File::Basename;
+use Module::Metadata;
 use FIG_Config;
 use File::Path 'make_path';
 use Data::Dumper;
 use CloseStrains;
+use IPC::Run;
 
 1;
 
@@ -60,7 +62,8 @@ sub output
 
     my $job = $self->data('job');
 
-    my $templ = Template->new(INCLUDE_PATH => ".");
+    my $template_dir = dirname(Module::Metadata->find_module_by_name(__PACKAGE__));
+    my $templ = Template->new(INCLUDE_PATH => $template_dir);
 
     my $dir = $job->dir;
 
@@ -175,7 +178,7 @@ sub output
 		avail_refs => \@avail_refs_marked,
 	       );
 
-    if (!$templ->process("Html/CloseStrains.tt2", \%data, \$content))
+    if (!$templ->process("CloseStrains.tt2", \%data, \$content))
     {
 	$content = "<pre>Template error: " . $templ->error() . "\n</pre>\n";
     }
@@ -308,43 +311,28 @@ sub create_set
 
     my $tmpdir = "$path/tmp";
     make_path($tmpdir);
-    my $cs_compute = "$FIG_Config::bin/svr_CS";
-    if ($FIG_Config::fig_disk eq '/vol/rast-prod/FIGdisk' ||
-	$FIG_Config::fig_disk eq '/vol/rast-test/FIGdisk')
+
+    my $output;
+
+    my $cpus;
+    if (@refs >= 8)
     {
-	#
-	# prod rast for now uses pubseed to compute. Wrapper script used
-	# sources the environment so it can find the subsidiary scripts.
-	#
-	$cs_compute = "/vol/public-pseed/FIGdisk/bin/submit_svr_CS";
+	$cpus = 8;
     }
-    
-    my @cmd = ("qsub",
-	       "-b", "yes",
-	       "-q", "maple",
-	       "-e", "$path/SGE_STDERR",
-	       "-o", "$path/SGE_STDOUT",
-	       "-v", "TMPDIR=$tmpdir",
-	       "-N", "CS$id",
-	       $cs_compute, "-d", $path, "--fill-in-refs");
-    print STDERR "@cmd\n";
-    open(X, ">", "$path/SUBMIT");
-    print X "@cmd\n";
-    open(P, ". /vol/sge/default/common/settings.sh ; @cmd |") or die "Error submitting @cmd: $!";
-    my $sge;
-    while (<P>)
+    elsif (@refs >= 4)
     {
-	print X $_;
-	# Your job 7152711 ("svr_CS") has been submitted
-	
-	if (/job\s+(\d+)/)
-	{
-	    $sge = $1;
-	}
+	$cpus = 4;
     }
-    close(P);
-    close(X);
-    CloseStrains::set_status($path, "Queued job $sge");
+    else
+    {
+	$cpus = 2;
+    }
+
+    my $ok = IPC::Run::run(["rast-submit-rast-job",
+			    "--close-strains", $path,
+			    "--cpus", $cpus,
+			    $job->dir], ">", \$output);
+    CloseStrains::set_status($path, "Queued job: $output");
 }
 
 
