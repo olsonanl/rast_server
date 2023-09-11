@@ -19,7 +19,7 @@ my($opt, $usage) = describe_options("%c %o jobdir",
 				    ['skip-sims' => "Skip similarity computation"],
 				    ['cpus=i' => "Number of cpus", { default => 4 }],
 				    ['dry-run' => "Do a dry run"],
-				    ['partition=s' => "Use this partition", { default => 'shared' }],
+				    ['partition=s' => "Use this partition", { default => 'rast' }],
 				    ["output-directory|o=s" => "Slurm output directory"],
 				    ["help|h" => "Show this help message"]);
 print($usage->text), exit if $opt->help;
@@ -121,6 +121,10 @@ sub submit_annotate
     {
 	print "Skipping sims\n";
 	$meta->set_metadata("skip_sims", 1);
+	$skip = 1;
+    }
+    elsif ($meta->get_metadata("skip_sims"))
+    {
 	$skip = 1;
     }
     else
