@@ -3,6 +3,7 @@ use LWP::UserAgent;
 use Data::Dumper;
 use XML::LibXML;
 use strict;
+use Data::Dumper;
 use JSON::Any;
 
 my %param;
@@ -30,19 +31,34 @@ sub get_taxonomy_data
 
     my $ua = LWP::UserAgent->new();
 
-    my $res = url_get($ua, "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=$tax_id&report=sgml&mode=text");
+    my $res = url_get($ua, "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=$tax_id&report=sgml&mode=text");
     if ($res->is_success)
     {
 	my $ent = {};
 	my $doc = XML::LibXML->new->parse_string($res->content);
-	
+#	print STDERR $res->content;
 	my $lin = $doc->findvalue('//Taxon/Lineage');
-	$lin =~ s/^cellular organisms;\s+//;
+
+	my $sci = $doc->findvalue('/TaxaSet/Taxon/ScientificName');
+
+	my @lin = split(/;\s+/, $lin);
+	# print STDERR Dumper(\@lin, $lin[0]);
+	shift(@lin) if $lin[0] eq 'cellular organisms';
+	# print STDERR Dumper(\@lin);
+	push(@lin, $sci) if @lin == 0;
+	$lin = join("; ", @lin);
+
+	# print STDERR "\n\nSCI=$sci lin=$lin\n";
+
+	if ($lin eq '')
+	{
+	    # Empty lineage means we picked a toplevel domain. Pull the scentific name in there
+	    $lin = $sci;
+	}
 	my $domain = $lin;
 	$domain =~ s/;.*$//;
 	my $code = $doc->findvalue('//Taxon/GeneticCode/GCId');
 
-	my $sci = $doc->findvalue('/TaxaSet/Taxon/ScientificName');
 	if ($sci =~ /^(\S+)\s+(\S+)(\s+(.*))?\s*$/)
 	{
 	    $ent->{scientific_name} = $sci;
