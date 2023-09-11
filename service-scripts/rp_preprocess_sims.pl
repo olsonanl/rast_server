@@ -43,29 +43,43 @@ my $server_sims = "$jobdir/sims.job/sims.server";
 my $seqs_needing_sims = "$jobdir/sims.job/seqs_needing_sims";
 my $ids_needing_sims = "$jobdir/sims.job/ids_needing_sims";
 
-my $cmd;
-if ($FIG_Config::rast_sims_database)
+#
+# If we are skipping sims, don't try to pull them from the sim server either.
+#
+
+if ($meta->get_metadata("skip_sims"))
 {
-    my($dsn, $user, $pw, $tbl) = @$FIG_Config::rast_sims_database;
-    $cmd = "$FIG_Config::bin/pull_sims_from_database '$dsn' '$user' '$pw' '$tbl' < $fasta > $server_sims 2> $ids_needing_sims";
+    open(F, ">", $ids_needing_sims);
+    close(F);
+    open(F, ">", $server_sims);
+    close(F);
 }
 else
 {
-    $cmd = "$FIG_Config::bin/pull_sims_from_server < $fasta > $server_sims 2> $ids_needing_sims";
-}
-$meta->add_log_entry($0, $cmd);
-my $rc = system($cmd);
-if ($rc != 0)
-{
-    &fatal("pull_sims_from_server failed with rc=$rc: $cmd");
+    my $cmd;
+    if ($FIG_Config::rast_sims_database)
+    {
+	my($dsn, $user, $pw, $tbl) = @$FIG_Config::rast_sims_database;
+	$cmd = "$FIG_Config::bin/pull_sims_from_database '$dsn' '$user' '$pw' '$tbl' < $fasta > $server_sims 2> $ids_needing_sims";
+    }
+    else
+    {
+	$cmd = "$FIG_Config::bin/pull_sims_from_server < $fasta > $server_sims 2> $ids_needing_sims";
+    }
+    $meta->add_log_entry($0, $cmd);
+    my $rc = system($cmd);
+    if ($rc != 0)
+    {
+	&fatal("pull_sims_from_server failed with rc=$rc: $cmd");
+    }
 }
 
 #
 # Reinflate the ids to a fasta.
 #
 
-$cmd = "$FIG_Config::bin/pull_fasta_entries $fasta < $ids_needing_sims > $seqs_needing_sims";
-$rc = system($cmd);
+my $cmd = "$FIG_Config::bin/pull_fasta_entries $fasta < $ids_needing_sims > $seqs_needing_sims";
+my $rc = system($cmd);
 if ($rc != 0)
 {
     &fatal("pull_fasta_entries failed with rc=$rc: $cmd");
