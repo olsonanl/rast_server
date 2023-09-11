@@ -318,7 +318,7 @@ sub fix_frameshifts {
 		   );
 
 	$cmd = "diamond";
-	@args = ("--more-sensitive"
+	@args = ("--more-sensitive",
 		 "--threads", $cores,
 		 "-q", "$FIG_Config::organisms/$neigh/Features/peg/fasta",
 		 "--db", $org_dir/Features/peg/fasta.dmnd");
