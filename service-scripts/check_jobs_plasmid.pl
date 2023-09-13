@@ -27,6 +27,8 @@ use Mantis;
 use JobError 'flag_error';
 #use ImportJob;
 
+die "Check jobs plasmid disabled here";
+
 TSetup("2 main FIG", "TEXT");
 
 my $job_spool_dir = $FIG_Config::rast_jobs;

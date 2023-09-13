@@ -32,6 +32,9 @@ use Cache::Memcached::Fast;
 use File::Slurp;
 use IPC::Run;
 
+die "SGE check-jobs disabled here\n";
+
+
 TSetup("2 main FIG", "TEXT");
 
 my $job_spool_dir = $FIG_Config::rast_active_jobs;

@@ -303,8 +303,10 @@ sub output {
 					    fields => [qw(sequencing_method coverage number_of_contigs read_length
 							  submit_seed annotation_scheme rasttk_customize_pipeline gene_caller figfam_version
 							  fix_errors fix_frameshifts backfill_gaps build_models
-							  determine_family 
-							  enable_debug verbose_level
+							  determine_family
+							  compute_sims
+							  enable_debug
+							  verbose_level
 							  disable_replication
 							  ajax_url
 							  stage_sort_order
@@ -343,6 +345,19 @@ sub output {
       }
       elsif ($multi->page == 2)
       {
+	  print STDERR Dumper(SUBMIT2 => $cgi->param("taxonomy_string"));
+
+	  my $tax = $cgi->param("taxonomy_string");
+	  my @tax = split(/;\s*/, $tax);
+	  my $domain = $tax[0];
+
+	  if (! grep { $_ eq $domain } @{$self->{domains}})
+	  {
+	      $content .= "<h2>Input error</h2>\n";
+	      $content .= "<p><i>$domain</i> is not a valid domain for the beginning of the taxonomy string which was specified as <i>$tax</i>. It must be one of the following values: <i>@{$self->{domains}}</i>.</p>\n";
+	      $content .= "<p>Use the browser's back button to go back to the submission form and correct this error.\n";
+	      return $content;
+	  }
 	  #
 	  # Nothing really to do here. The selections get carried thru
 	  # because we chose keepextras on the FormBuilder config.
@@ -385,7 +400,7 @@ sub output {
 	  $ajax_url = $1."/ncbi.cgi";
 	  $ajax_url =~ s/(http\:\/\/[^\/]+)\:\d+/$1/;
       }
-      warn "set ajax url to $ajax_url\n";
+      # warn "set ajax url to $ajax_url\n";
 
       $form->field(name => "ajax_url",
 		   value => $ajax_url,
@@ -454,6 +469,8 @@ sub output {
       $form->field(name => 'backfill_gaps',
 		   options => [[1, 'Yes']],
 		   value => 1);
+      $form->field(name => 'compute_sims',
+		   options => [[1, 'Yes']]);
       $form->field(name => 'enable_debug',
 		   options => [[1, 'Yes']]);
       $form->field(name => 'disable_replication',
@@ -989,6 +1006,7 @@ sub commit_upload  {
     $job->{meta}->{'correction.backfill_gaps'} = $cgi->param('backfill_gaps') || 0;
     $job->{meta}->{'disable_cache'} = $cgi->param('disable_replication') || 0;
     $job->{meta}->{'env.debug'} = $cgi->param('enable_debug') || 0;
+    $job->{meta}->{'skip_sims'} = $cgi->param('compute_sims') ? 0 : 1;
     $job->{meta}->{'env.verbose'} = $cgi->param('verbose_level') || 0;
     $job->{meta}->{'model_build.enabled'} = $cgi->param('build_models') || 0;
     $job->{meta}->{'options.determine_family'} = $cgi->param('determine_family') || 0;

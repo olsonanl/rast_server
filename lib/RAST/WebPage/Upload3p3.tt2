@@ -212,6 +212,11 @@ function check_gene_caller(form)
 <td><i>If you wish for the pipeline to blast large gaps for missing genes, check this option.</i></td>
 </tr>
 <tr>
+<td> Compute similaritiess?</td>
+<td> [% form.field.compute_sims.field %] </td>
+<td><i>If you wish to compute similarities for the SeedViewer compare regions display, check this box.</i></td>
+</tr>
+<tr>
 <td> Turn on debug?</td>
 <td> [% form.field.enable_debug.field %] </td>
 <td><i>If you wish debug statements to be printed for this job, check this box.</i></td>

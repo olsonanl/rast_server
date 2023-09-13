@@ -42,6 +42,7 @@ cp-html:
 	    rsync -arv $$i $(TOP_DIR)/html; \
 	fi done
 	rsync -arv css/rast_home.css css/rast.css $(TOP_DIR)/html
+	rsync -arv images/rast*png $(TOP_DIR)/html
 
 
 deploy: deploy-all

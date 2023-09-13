@@ -1,9 +1,10 @@
 package FIG_Config;
 
-$fortyeight_jobs = "/scratch/olson/RAST/jobs";
-$rast_jobs = "/scratch/olson/RAST/jobs";
-$general_jobdir = "/scratch/olson/RAST/general_jobs";
+$fortyeight_jobs = "/vol/rast-prod/jobs";
+$rast_jobs = $fortyeight_jobs;
+$general_jobdir = "/vol/rast-prod/global/jobs";
 
+$rast_job_floor= 1356558;
 $rast_sims_data = '/vol/rast-prod/NR-SEED/nr.with.phages';
 
 $sim_chunk_size = 4_000_000;
@@ -14,7 +15,7 @@ $clearinghouse_url = 'http://clearinghouse.theseed.org/Clearinghouse/clearinghou
 $FigfamsData = "/vol/figfam-prod/Default";
 
 $try_sim_server = 1;
-my $shost = "gum.mcs.anl.gov";
+my $shost = "aspen.cels.anl.gov:7121";
 $sim_server_url = "http://$shost/simserver/perl/sims.pl";
 
 $daily_statistics_dir = "/vol/public-pseed/SharedData/DailyStatistics";

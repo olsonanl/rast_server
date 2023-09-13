@@ -24,6 +24,8 @@ use Mail::Mailer;
 use Mantis;
 use Filesys::DfPortable;
 
+die "Check jobs ross disabled here";
+
 TSetup("2 main FIG", "TEXT");
 
 my $job_spool_dir = $FIG_Config::rast_jobs;
