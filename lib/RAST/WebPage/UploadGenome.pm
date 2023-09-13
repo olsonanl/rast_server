@@ -384,7 +384,7 @@ sub output {
       }
       elsif ($multi->page == 2)
       {
-	  print STDERR Dumper(SUBMIT2 => $cgi->param("taxonomy_string"));
+	      #print STDERR Dumper(SUBMIT2 => $cgi->param("taxonomy_string"));
 
 	  my $tax = $cgi->param("taxonomy_string");
 	  my @tax = split(/;\s*/, $tax);
