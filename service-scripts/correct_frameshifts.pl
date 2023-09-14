@@ -321,7 +321,7 @@ sub fix_frameshifts {
 	@args = ("--more-sensitive",
 		 "--threads", $cores,
 		 "-q", "$FIG_Config::organisms/$neigh/Features/peg/fasta",
-		 "--db", $org_dir/Features/peg/fasta.dmnd");
+		 "--db", "$org_dir/Features/peg/fasta.dmnd");
 		 
 	
 	my @sims = map { $_ =~ /^(\S+)\s+(\S+)\s+(\S+)\s+(\S+\s+){3}(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)/;

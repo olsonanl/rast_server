@@ -227,7 +227,7 @@ sub output {
   if ($bvbrc_default_workflow)
   {
       $default_workflow = $bvbrc_default_workflow;
-      print STDERR Dumper(LOCAL_DEFAULT => $default_workflow);
+      #print STDERR Dumper(LOCAL_DEFAULT => $default_workflow);
   }
   else
   {
@@ -349,9 +349,33 @@ sub output {
 
 	  my $tax = $cgi->param("taxonomy_string");
 	  my @tax = split(/;\s*/, $tax);
-	  my $domain = $tax[0];
+	  my $domain = $tax[0] // "";
 
-	  if (! grep { $_ eq $domain } @{$self->{domains}})
+
+	  if ($domain =~ /^\s*$/)
+	  {
+	      $content .= "<h2>Input error</h2>\n";
+	      $content .= <<END;
+You have not entered any data into the "Taxonomy string" field.
+<p>
+The Taxonomy string begins with the three valid values,
+"Bacteria; ", "Archaea; ", or "Viruses; ".
+<p>
+The safest way to ensure that the "Taxonomy string" field is filled in correctly
+is to look up the NBCI taxonomy-ID for your genome via
+the <a href="http://www.ncbi.nlm.nih.gov/Taxonomy/taxonomyhome.html">the NCBI taxonomy site</a>,
+enter that ID into the taxonomy-ID box, and click "Fill in form based on NCBI Taxonomy-ID".
+<p>
+If you do not know your genome's species, you can enter the ID for Genus, Family,
+Order, Class, Phylum, or Domain. For example, if you have entered "Streptococcus sp."
+into the "Genus" and "Species" fields, you can enter '1301', the Taxonomy-ID
+for genus Streptococcus, into the Taxonomy-ID box and click the fill-in button.
+The Taxonomy string field will be filled in with a valid taxonomy.
+END
+	      $content .= "<p>Use the browser's back button to go back to the submission form and correct this error.\n";
+	      return $content;
+	  }
+	  elsif (! grep { $_ eq $domain } @{$self->{domains}})
 	  {
 	      $content .= "<h2>Input error</h2>\n";
 	      $content .= "<p><i>$domain</i> is not a valid domain for the beginning of the taxonomy string which was specified as <i>$tax</i>. It must be one of the following values: <i>@{$self->{domains}}</i>.</p>\n";

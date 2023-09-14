@@ -1,30 +1,27 @@
 #!/vol/cee-2007-1108/linux-debian-x86_64/bin/perl
 use LWP::UserAgent;
 use Data::Dumper;
+use XML::LibXML;
 use strict;
 use Data::Dumper;
-use JSON::XS;
+use JSON::Any;
 
 my %param;
 while (<>)
 {
-    chomp;
-    if (/^([^=]*)=(.*)/)
-    {
-	$param{$1} = $2;
-    }
+chomp;
+if (/^([^=]*)=(.*)/)
+{
+$param{$1} = $2;
+}
 }
 
 print "Content-type: text/xml\n\n";
 
 my $tax_id = $param{tax_id};
-if (!$tax_id)
-{
-    die "No tax id specified\n";
-}
 my $info = get_taxonomy_data($tax_id);
 
-print JSON::XS->new->pretty()->encode($info);
+print JSON::Any->objToJson($info);
 
 exit 0;
 
@@ -34,26 +31,22 @@ sub get_taxonomy_data
 
     my $ua = LWP::UserAgent->new();
 
-    my $url = "https://www.bv-brc.org/api/taxonomy/$tax_id";
-    # print STDERR "url=$url\n";
-    my $res = url_get($ua, $url);
+    my $res = url_get($ua, "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=$tax_id&report=sgml&mode=text");
     if ($res->is_success)
     {
 	my $ent = {};
-	my $doc = eval { decode_json($res->content);};
-	if ($@)
-	{
-	    die "Bad parse: $@\n" . $res->content;
-	}
+	my $doc = XML::LibXML->new->parse_string($res->content);
+#	print STDERR $res->content;
+	my $lin = $doc->findvalue('//Taxon/Lineage');
 
-	my $sci = $doc->{taxon_name};
+	my $sci = $doc->findvalue('/TaxaSet/Taxon/ScientificName');
 
-	my @lin = @{$doc->{lineage_names}};
+	my @lin = split(/;\s+/, $lin);
 	# print STDERR Dumper(\@lin, $lin[0]);
 	shift(@lin) if $lin[0] eq 'cellular organisms';
 	# print STDERR Dumper(\@lin);
 	push(@lin, $sci) if @lin == 0;
-	my $lin = join("; ", @lin);
+	$lin = join("; ", @lin);
 
 	# print STDERR "\n\nSCI=$sci lin=$lin\n";
 
@@ -64,7 +57,7 @@ sub get_taxonomy_data
 	}
 	my $domain = $lin;
 	$domain =~ s/;.*$//;
-	my $code = $doc->{genetic_code};
+	my $code = $doc->findvalue('//Taxon/GeneticCode/GCId');
 
 	if ($sci =~ /^(\S+)\s+(\S+)(\s+(.*))?\s*$/)
 	{
@@ -74,7 +67,7 @@ sub get_taxonomy_data
 	    $ent->{strain} = "" . $4;
 	}
 	
-	$ent->{domain} = $doc->{division};
+	$ent->{domain} = $domain;
 	$ent->{taxonomy} = $lin;
 	$ent->{genetic_code} = $code;
 #print Dumper($res->content, $ent);
@@ -101,8 +94,7 @@ sub url_get
     my $res;
     while (1)
     {
-	$res = $ua->get($url,
-		       'Accept', 'application/json');
+	$res = $ua->get($url);
 
 	if ($res->is_success)
 	{
@@ -121,7 +113,6 @@ sub url_get
 	}
 	my $retry_time = shift(@retries);
 	print STDERR "Request failed with code=$code, sleeping $retry_time and retrying $url\n";
-	print STDERR $res->content;
 	sleep($retry_time);
     }
     return $res;
