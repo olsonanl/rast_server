@@ -147,7 +147,7 @@ else
 {
     $vars{sbatch_job_name} = "Rpl" . "-" . join(",", @job_ids);
 }
-$vars{sbatch_job_mem} = "16G";
+$vars{sbatch_job_mem} = "4G";
 $vars{sbatch_output} = $opt->output_directory . "/slurm-%j.out";
 $vars{sbatch_error} = $opt->output_directory . "/slurm-%j.err";
 $vars{sbatch_time} = "8:00:00";
