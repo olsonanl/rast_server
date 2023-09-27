@@ -264,6 +264,7 @@ sub output {
       {
 	  $s->{default} = 1;
 	  $s->{condition} = $def->{condition} if $def->{condition};
+	  $s->{failure_is_not_fatal} = $def->{failure_is_not_fatal} if exists $def->{failure_is_not_fatal};
       }
   }
 
@@ -1095,6 +1096,10 @@ sub commit_upload  {
 			$vals->{$p->{name}} = $pv;
 			# print "   $k = $pv\n";
 		    }
+		}
+		if (exists $stage->{failure_is_not_fatal})
+		{
+		    $item->{failure_is_not_fatal} = $stage->{failure_is_not_fatal};
 		}
 		if ($stage->{parameters_name})
 		{
