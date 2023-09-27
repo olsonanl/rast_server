@@ -196,8 +196,7 @@ sub create_new_job {
     }
     
     if ($data->{'tax_dir'}) {
-	    print STDERR "Copying data\n" . Dumper($data);
-	system("cp", "$job_dir/GENOME", "$job_dir/PROJECT", "$job_dir/TAXONOMY", "$job_dir/TAXONOMY_ID", "$data->{'tax_dir'}");
+	system("cp", "$job_dir/GENOME", "$job_dir/PROJECT", "$job_dir/TAXONOMY", "$job_dir/TAXONOMY_id", "$data->{'tax_dir'}");
 	
 	open(FH, ">" . $data->{'tax_dir'} . "/GENETIC_CODE") or die "cannot open GENETIC_CODE file in $job_dir: $!\n";
 	print FH $data->{'genetic_code'}."\n";

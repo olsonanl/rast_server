@@ -214,10 +214,11 @@ sub output {
 	    { name => 'find-close-neighbors' },
 	    { name => 'annotate-strain-type-MLST' },
 	    { name => 'call-features-prophage-phispy' },
-	    { name => 'compute_genome_quality_control' },
+	    { name => 'compute_genome_quality_control',
+	      },
 	    { name => 'evaluate_genome',
-		  failure_is_not_fatal => 1,
-		  evaluate_genome_parameters => {},
+		  parameters_name => 'evaluate_genome_parameters',
+		  parameters => [],
 	      },
 		];
   $self->{template_data}->{stages} = $stages;
@@ -915,9 +916,12 @@ sub commit_upload  {
 
     my $cgi = $self->application->cgi;
 
-    open(L, ">", "/tmp/out.$$");
-    print L Dumper($form, $cgi);
-    close(L);
+    if (0) {
+
+        open(L, ">", "/tmp/out.$$");
+        print L Dumper($form, $cgi);
+        close(L);
+    }
     
     my $genus = $cgi->param('genus');
     my $species = $cgi->param('species');
@@ -1066,6 +1070,7 @@ sub commit_upload  {
 		@stage_names = map { $_->{name} } @$stages;
 	    }
 	
+
 	    for my $name (@stage_names)
 	    {
 		my $val = $cgi->param($name);
