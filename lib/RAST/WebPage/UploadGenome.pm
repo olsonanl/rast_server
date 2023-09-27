@@ -101,7 +101,7 @@ sub output {
 
   my $content;
 
-  $self->{domains} = [qw(Bacteria Archaea Virus)];
+  $self->{domains} = [qw(Bacteria Archaea Viruses)];
   $self->{genetic_codes} = [qw(11 4)];
 	  
   if ($FIG_Config::rast_euk_users->{$self->app->session->user->login})
