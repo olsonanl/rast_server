@@ -165,7 +165,7 @@ if (@ARGV == 2) {
 	    
 	    $file_type =~ s/^\s+//o;   #...trim leading whitespace
 	    $file_type =~ s/\s+$//o;   #...trim trailing whitespace
-	    $file_type =~ s/, with very long lines//;
+	    $file_type =~ s/, with very long lines.*//;
 	    
 	    print STDERR "file_type = $file_type\n" if $ENV{VERBOSE};
 	    

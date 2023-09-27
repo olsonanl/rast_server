@@ -20,6 +20,7 @@ use Mail::Mailer;
 use FileHandle;
 use File::Basename;
 use FileLocking qw(lock_file unlock_file lock_file_shared);
+use Data::Dumper;
 
 my $have_fsync;
 eval {
@@ -202,6 +203,11 @@ sub create_new_job {
 	close(FH);
 	
     }
+    else
+    {
+
+	    print STDERR "NOT copying data\n" . Dumper($data);
+	}
   
     open(FH, ">" . $job_dir . "/GENOME_ID") or die "cannot open GENOME_ID file in $job_dir: $!\n";
     print FH $data->{'taxonomy_id_ext'}."\n";

@@ -116,6 +116,8 @@ sub submit_annotate
 		       "--cpus", $opt->cpus,
 		       "--output-directory", $output_dir);
 
+    my $jobid = basename($jobdir);
+
     my @sim_phase;
     if ($opt->skip_sims)
     {
@@ -125,6 +127,15 @@ sub submit_annotate
     }
     elsif ($meta->get_metadata("skip_sims"))
     {
+	$skip = 1;
+    }
+    elsif ($meta->get_metadata('annotation_scheme') eq 'RASTtk' && !defined($meta->get_metadata('skip_sims')))
+    {
+	#
+	# Hack to disable sims for rasttk (the behavior prior to the slurm update)
+	#
+	print "Skipping sims for rasttk job\n";
+	$meta->set_metadata("skip_sims", 1);
 	$skip = 1;
     }
     else
