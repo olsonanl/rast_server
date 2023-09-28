@@ -174,6 +174,23 @@ sub output {
 	    },
 	    { name => 'call-features-CDS-prodigal' },
 	    { name => 'call-features-CDS-genemark' },
+	    { name => 'prune_invalid_CDS_features',
+		  parameters_name => 'prune_invalid_CDS_features_parameters',
+		  parameters => [
+			     {
+				 name => 'minimum_contig_length',
+				 caption => '',
+				 default => 0,
+				 validate => 'INT',
+			     },
+			     {
+				 name => 'max_homopolymer_frequency',
+				 caption => '',
+				 default => '0.9',
+				 validate => 'FLOAT',
+			     },
+				 ],
+	  },
 	    {
 		name => 'annotate-proteins-kmer-v2',
 		parameters_name => 'kmer_v2_parameters',
@@ -1091,7 +1108,7 @@ sub commit_upload  {
 		{
 		    my $k = "$name-$p->{name}";
 		    my $pv = $cgi->param($k);
-		    if ($pv)
+		    if (defined($pv))
 		    {
 			$vals->{$p->{name}} = $pv;
 			# print "   $k = $pv\n";
