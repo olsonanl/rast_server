@@ -67,6 +67,10 @@ cat $jobdir/pairs | while read x y; do
     rp_compute_peer_sim_pair $jobdir/sim_pairs/$x.$y $x $y
 done
 
+[% ELSIF application == "write_exports" -%]
+
+rp_write_exports [% job.directory %]
+
 [% END -%]
 
 EOF
