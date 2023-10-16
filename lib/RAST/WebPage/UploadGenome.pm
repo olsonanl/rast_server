@@ -29,6 +29,19 @@ our $bvbrc_default_workflow;
 eval { 
     require Bio::P3::GenomeAnnotationApp::GenomeAnnotationCore;
     $bvbrc_default_workflow = Bio::P3::GenomeAnnotationApp::GenomeAnnotationCore->default_workflow;
+
+    #
+    # For RAST, we add failure_is_not_fatal to additional stages.
+    #
+    my %to_mark = map { $_ => 1 } qw(compute_genome_quality_control);
+    for my $s (@{$bvbrc_default_workflow->{stages}})
+    {
+	if ($to_mark{$s->{name}})
+	{
+	    $s->{failure_is_not_fatal} = 1;
+	}
+    }
+
 };
 
 use base qw( WebPage RAST::WebPage::Upload );
