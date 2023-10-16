@@ -1,5 +1,6 @@
 package FIG_Config;
 
+$fortyeight_home = "http://rast.nmpdr.org/";
 $fortyeight_jobs = "/vol/rast-prod/jobs";
 $rast_jobs = $fortyeight_jobs;
 $general_jobdir = "/vol/rast-prod/global/jobs";
@@ -19,5 +20,7 @@ my $shost = "aspen.cels.anl.gov:7121";
 $sim_server_url = "http://$shost/simserver/perl/sims.pl";
 
 $daily_statistics_dir = "/vol/public-pseed/SharedData/DailyStatistics";
+
+$mga_bin = $ext_bin;
 
 1;
