@@ -299,7 +299,7 @@ sub fix_frameshifts {
     my @annotations = ();  # we return an annotaton for each detected frameshift;
     
     #    &FIG::run("$FIG_Config::ext_bin/formatdb -i $org_dir/Features/peg/fasta -p T");
-    FIG::run("diamond makedb -d $org_dir/Features/peg/fasta.dmnd -in $org_dir/Features/peg/fasta");
+    FIG::run("diamond makedb -d $org_dir/Features/peg/fasta.dmnd --in $org_dir/Features/peg/fasta");
 
     my $cores = $ENV{P3_ALLOCATED_CPU} // 2;
     
@@ -318,7 +318,7 @@ sub fix_frameshifts {
 		   );
 
 	$cmd = "diamond";
-	@args = ("--more-sensitive",
+	@args = ("blastp", "--more-sensitive",
 		 "--threads", $cores,
 		 "-q", "$FIG_Config::organisms/$neigh/Features/peg/fasta",
 		 "--db", "$org_dir/Features/peg/fasta.dmnd");
