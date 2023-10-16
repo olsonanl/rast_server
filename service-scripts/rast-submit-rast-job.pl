@@ -14,6 +14,7 @@ my($opt, $usage) = describe_options("%c %o jobdir",
 				    ['container=s' => "Container to use "],
 				    ['template=s' => "Override default submission template"],
 				    ['replicate=s' => "Submit a replication job. Value is the source job"],
+				    ['write-exports' => "Submit a job to recompute exports for given job dir"],
 				    ['close-strains=s' => "Submit a close-strains computation job. Value is close strains dir" ],
 				    ['peer-sims' => "Submit a peer-sims job."],
 				    ['skip-sims' => "Skip similarity computation"],
@@ -43,7 +44,7 @@ if ($opt->container)
 	{
 	    die "Failed to inspect container " . $opt->container . " \n";
 	}
-	print "Submitting job $job to container " . $opt->container . " with metadata:\n$info\n";
+	print STDERR "Submitting job $job to container " . $opt->container . " with metadata:\n$info\n";
 	@container_param = ("--container", $opt->container);
     }
     else
@@ -97,6 +98,10 @@ elsif ($opt->peer_sims)
 {
     submit_peer_sims();
 }
+elsif ($opt->write_exports)
+{
+    submit_write_exports();
+}
 else
 {
     submit_annotate();
@@ -121,7 +126,7 @@ sub submit_annotate
     my @sim_phase;
     if ($opt->skip_sims)
     {
-	print "Skipping sims\n";
+	print STDERR "Skipping sims\n";
 	$meta->set_metadata("skip_sims", 1);
 	$skip = 1;
     }
@@ -134,7 +139,7 @@ sub submit_annotate
 	#
 	# Hack to disable sims for rasttk (the behavior prior to the slurm update)
 	#
-	print "Skipping sims for rasttk job\n";
+	print STDERR "Skipping sims for rasttk job\n";
 	$meta->set_metadata("skip_sims", 1);
 	$skip = 1;
     }
@@ -149,7 +154,7 @@ sub submit_annotate
     print $out if ($opt->dry_run);
     $ok or die  "Submit failed with $?";
     my($p1) = $out =~ /(\d+)/;
-    print "Submitted job $p1\n";
+    print STDERR "Submitted job $p1\n";
     print LOG "$now: Submitted job $p1\n";
 }
 
@@ -172,7 +177,7 @@ sub submit_replicate
 	
     $ok or die  "replicate submit failed with $?";
     my($p1) = $out =~ /(\d+)/;
-    print "Submitted replication from " . $opt->replicate . " job $p1\n";
+
     print LOG "Submitted replication from " . $opt->replicate . " job $p1\n";
 }
 
@@ -197,7 +202,6 @@ sub submit_close_strains
 	
     $ok or die  "Close strains submit failed with $?";
     my($p1) = $out =~ /(\d+)/;
-    print "Submitted close strains job $p1\n";
     print LOG "Submitted close strains job $p1\n";
 }
 
@@ -222,8 +226,30 @@ sub submit_peer_sims
 	
     $ok or die  "Peer sims submit failed with $?";
     my($p1) = $out =~ /(\d+)/;
-    print "Submitted peer simsjob $p1\n";
     print LOG "Submitted peer sims job $p1\n";
+}
+
+sub submit_write_exports
+{
+    my @submit_prog = ("rast-submit-rast-job-phase",
+		       ($opt->dry_run ? ("--dry-run") : ()),
+		       "--write-exports", 
+		       @container_param,
+		       "--partition" => $opt->partition,
+		       "--template", $template,
+		       "--cpus", 1,
+		       "--output-directory", $output_dir);
+    
+    
+    my $out;
+    my $now = strftime('%Y-%m-%d %H:%M:%S', localtime);
+    my $ok = run([@submit_prog, $jobdir], ">", \$out);
+
+    print $out if ($opt->dry_run);
+	
+    $ok or die  "Peer sims submit failed with $?";
+    my($p1) = $out =~ /(\d+)/;
+    print LOG "Submitted exports job $p1\n";
 }
 
 

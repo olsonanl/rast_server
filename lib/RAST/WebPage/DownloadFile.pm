@@ -68,15 +68,12 @@ sub output {
       #
 
       my $dir = $job->dir;
-      my $id = $job->id;
-      my $cmd = ". /vol/sge/default/common/settings.sh; " .
-	  "qsub -e $dir/sge_output -o $dir/sge_output " .
-	  " -q compute.q " .
-	  "-N exp_$id -v PATH -b yes $FIG_Config::bin/rp_write_exports $dir > /tmp/submit.$$";
-      my $rc = system($cmd);
+
+      my @cmd = ("rast-submit-rast-job", "--write-exports", $dir);
+      my $rc = system(@cmd);
       if ($rc != 0)
       {
-	  warn "Error $rc submitting $cmd\n";
+	  warn "Error $rc submitting @cmd\n";
 	  return "Error encountered while submitting download recomputation.\n";
       }
       else
