@@ -45,15 +45,46 @@ function ajax_result (http_request, tax_id, form) {
 	}
 	if (obj == null || obj.domain == "")
 	{ 
-	    alert("Could not find taxonomy id " + tax_id + " at NCBI.");
+	    alert("Could not fetch metadata for taxon-ID " + tax_id + ", you will need to fill in the fields manually");
 	    return;
 	}
-	set_radio(form, "domain", obj.domain);
+	var domain=obj.domain;
+	var taxonomy=obj.taxonomy;
+	if (tax_id == 2) {
+	   domain="Bacteria";
+	} else if (tax_id == 2157) {
+	   domain="Archaea";
+	} else if (taxonomy.startsWith("Vir")) {
+	   domain="Viruses";
+	}
+	var genus=obj.genus;
+	var species=obj.species;
+	var strain=obj.strain;
+	if (genus == null || genus == "") {
+	   if (domain == "Bacteria") {
+	      genus="Bacterium";
+	      species="unknown sp.";
+	      strain="";
+	   } else if (domain == "Archaea") {
+	     genus="Archaeum";
+	     species="unknown sp.";
+  	     strain="";
+	   } else if (domain == "Viruses") {
+	     genus="Virus";
+	     species="unknown sp.";
+  	     strain="";	     
+	   } else {
+	     genus="Unknown";
+	     species="sp.";
+  	     strain="";
+	   }
+	}
+	set_radio(form, "domain", domain);
 	set_form_field(form, "taxonomy_string", obj.taxonomy);
 	set_radio(form, "genetic_code", obj.genetic_code);
-	set_form_field(form, "genus", obj.genus);
-	set_form_field(form, "species", obj.species);
-	set_form_field(form, "strain", obj.strain);
+	set_form_field(form, "genus", genus);
+	set_form_field(form, "species", species);
+	set_form_field(form, "strain", strain);
     }
 }
 
@@ -132,18 +163,18 @@ and you will need to fill in the below genome metadata manually.<br>
 
 <li>
 If you plan on submitting this genome to 
-<a href="http://patricbrc.org/">PATRIC</a>
+<a href="https://www.bv-brc.org/">BV-BRC</a> (AKA "PATRIC")
 you will need to provide the most descriptive NCBI taxonomic grouping possible.
 If you leave the taxonomy-ID field blank, RAST will assign a meaningless taxonomic identifier
-and the genome will not be suitable for submission to PATRIC. 
-We discuss the motivation and process for submitting your genome to PATRIC
+and the genome will not be suitable for submission to BV-BRC. 
+We discuss the motivation and process for submitting your genome to BV-BRC
 <a href="Html/PATRIC_Submission.html">in this document</a>.</i>
 </li>
 
 <li>
 You may search for the taxonomy-ID of your organism using the search 
 facilities at the
-<a target="_blank" href="http://www.ncbi.nlm.nih.gov/Taxonomy/taxonomyhome.html/">
+<a target="_blank" href="https://www.ncbi.nlm.nih.gov/Taxonomy/taxonomyhome.html/">
 NCBI taxonomy browser</a>. </td>
 </li>
 </ul>
@@ -170,7 +201,7 @@ NCBI taxonomy browser</a>. </td>
 
 <td>
 <ul>
-<li> If you enter a valid NCBI taxonomy-ID and click "Fill in form based on NCBI taxonomy-ID,"
+<li>If you enter a valid NCBI taxonomy-ID and click "Fill in form based on NCBI taxonomy-ID,"
 RAST will attempt to automatically fill in the form below.
 You may then edit any incorrect field values before going to the next step.
 </li>
@@ -206,7 +237,7 @@ based on the form entries below.</i>
 <td> [% form.field.genus.field %] </td>
 <td> 
 <ul>
-<li>E.g., <i>"Escherichia".</i> If you do not know the genus, leave blank, and it will default to "Unknown".
+<li>E.g., <i>"Escherichia".</i> If you do not know the genus, leave blank, and it will default to the genome's Domain.
 </li>
 </ul>
 </td>
@@ -216,7 +247,7 @@ based on the form entries below.</i>
 <td> [% form.field.species.field %] </td>
 <td>
 <ul>
-<li>E.g., <i>"coli".</i> If you do not know the species, leave blank, and it will default to "sp.".
+<li>E.g., <i>"coli".</i> If you do not know the species, leave blank, and it will default to "unknown sp.".
 </li>
 </ul>
 </td>
@@ -234,7 +265,7 @@ based on the form entries below.</i>
 </tr>
 
 <tr>
-<td> <strong><a target="_blank" href="http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi">Genetic Code:</a></strong></td>
+<td> <strong><a target="_blank" href="https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi">Genetic Code:</a></strong></td>
 <td> [% form.field.genetic_code.field %] </td>
 </tr>
 

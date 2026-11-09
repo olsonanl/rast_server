@@ -1266,7 +1266,7 @@ sub get_taxonomy_data
 
     my $ua = LWP::UserAgent->new();
 
-    my $res = $self->url_get($ua, "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=$tax_id&report=sgml&mode=text");
+    my $res = $self->url_get($ua, "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=$tax_id&report=sgml&mode=text");
     if ($res->is_success)
     {
 	my $ent = {};

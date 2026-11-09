@@ -105,7 +105,7 @@ sub output {
     # check for downloads
     my $downloads = $job->downloads();
     
-    my $scheme = $job->metaxml->get_metadata('annotation_scheme');
+    my $scheme = $job->metaxml->get_metadata('annotation_scheme') // '';
     if ($scheme eq 'RASTtk' && $job->metaxml->get_metadata('rasttk_workflow')) {
 	# See RAST/WebPage/DownloadFile.pm for special case code for this file.
 	
