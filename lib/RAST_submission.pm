@@ -312,7 +312,7 @@ sub get_taxonomy_data
 {
     my($self, $tax_id) = @_;
 
-    my $res = $self->url_get("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=$tax_id&report=sgml&mode=text");
+    my $res = $self->url_get("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=$tax_id&report=sgml&mode=text");
     if ($res->is_success)
     {
 	my $ent = {};
@@ -482,7 +482,7 @@ sub retrieve_project_data
    
 
     my $id_list = join(",", @ids);
-    my $query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=" . $id_list . "&rettype=gb" ;
+    my $query = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=" . $id_list . "&rettype=gb" ;
     my $resp = $self->url_get($query);
     if ($resp->is_success())
     {
@@ -535,7 +535,7 @@ sub retrieve_contig_data
 	}
     }
 
-    my $query = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=" . $contig . "&rettype=gb" ;
+    my $query = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=" . $contig . "&rettype=gb" ;
     my $resp = $self->url_get($query);
     if ($resp->is_success())
     {

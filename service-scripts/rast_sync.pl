@@ -3,6 +3,7 @@
 use strict;
 use warnings; 
 
+use Carp::Always;
 use DBMaster;
 use Getopt::Long;
 use DirHandle;

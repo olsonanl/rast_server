@@ -1,6 +1,6 @@
 package WebPage::Error;
 
-use base qw( WebApp::WebPage );
+use base qw( WebPage );
 
 1;
 

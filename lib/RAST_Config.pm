@@ -5,7 +5,7 @@ $fortyeight_jobs = "/vol/rast-prod/jobs";
 $rast_jobs = $fortyeight_jobs;
 $general_jobdir = "/vol/rast-prod/global/jobs";
 
-$rast_job_floor= 1357867;
+$rast_job_floor= 1551609;
 $rast_sims_data = '/vol/rast-prod/NR-SEED/nr.with.phages';
 
 $sim_chunk_size = 4_000_000;
